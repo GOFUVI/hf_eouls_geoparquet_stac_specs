@@ -12,3 +12,27 @@ By default, both CODAR’s software and SeaSondeR export Radial Metrics in the *
 While human-readable, LLUV (like CSV) is not optimized for large-scale analyses [2](#ref2), so pre-ingestion into a more efficient, read-oriented format is essential for any workflow that handles extended time series.
 
 This repository defines the specifications of a parquet format that complies with GeoParquet v1.1.0 and a STAC catalog to store HF-Radar Radial Metrics for efficient data analysis pipelines.
+
+### GeoParquet Format
+
+The **GeoParquet** format builds on Apache Parquet by providing a standardized way to store geospatial data (points, lines, polygons, etc.) in a columnar layout. GeoParquet v1.1.0 defines how geometry columns and coordinate reference systems (CRS) must be encoded, and mandates file-level and column-level metadata to ensure interoperability. Key requirements include:
+
+- Geometry columns MUST be stored at the root schema and encoded as Well-Known Binary (WKB) or native GeoArrow types.
+- CRS information MUST be provided in PROJJSON format or implied as OGC:CRS84 when absent.
+- File metadata MUST include the GeoParquet version, the name of the primary geometry column, and metadata for each geometry column (encoding, geometry types, CRS, bounding box, etc.).
+- Column-level metadata describes each geometry column’s encoding, supported geometry types, CRS, orientation, edges, and optional epoch for dynamic CRS.
+
+GeoParquet leverages Parquet’s columnar compression and indexing features to enable efficient I/O, selective column reads, and scalable analytics with big-data engines such as Apache Spark, DuckDB, and Dask.
+
+### STAC Catalog and Item Design
+
+This repository also defines a **STAC** catalog layout for HF-Radar Radial Metrics stored in GeoParquet. Each **STAC Item** corresponds to a single station measurement at a specific timestamp (e.g., a 30-minute interval) and includes separate GeoParquet assets for the negative and positive Bragg peaks. Items link back to a parent STAC Collection organized by station, data provider, and APM period. The STAC design follows these principles:
+
+- **Item ID** combines station identifier and ISO8601 timestamp.
+- **Geometry** and **bbox** capture the spatial coverage of all radial measurements in that time window.
+- **properties.datetime** holds the measurement timestamp.
+- **assets** include two Parquet files (`pos_bragg=0` and `pos_bragg=1`) with `type: application/x-parquet` and `roles: ["data"]`.
+- **Table extension** is used at the collection level to describe the schema of the tabular data (column names, types, descriptions), avoiding repetition in each item.
+- **Sidecar JSON** (`*.stac.json`) is colocated with each Parquet file to store STAC metadata.
+
+STAC Collections group items by station and APM period in a hierarchical catalog structure that ensures clear organization and compatibility with STAC tooling.
