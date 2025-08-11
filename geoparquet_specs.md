@@ -11,17 +11,27 @@ GeoParquet v1.1.0 is an extension of Apache Parquet for geospatial data. It defi
 - File-level metadata MUST include the GeoParquet version, the name of the primary geometry column, and metadata for each geometry column (encoding, geometry types, CRS, bounding box, etc.).
 - Column-level metadata MUST describe each geometry column’s encoding, supported geometry types, CRS, orientation, edges, and may include an optional epoch for dynamic CRS.
 
+## Radial Metrics Source Format
+
+Radial Metrics are typically exported by CODAR’s native software and by tools like SeaSondeR in the **LLUV** format, a simple ASCII table. Each LLUV file is organized into three sections:
+
+1. A header with global metadata such as timestamps, site identifiers, and processing parameters.
+2. A main table listing individual echoes with their bearing, range, signal strength, and related attributes.
+3. A secondary summary table that groups echoes by range bins to provide aggregate statistics per distance.
+
+Although human-readable, LLUV—much like CSV—does not scale efficiently for long time series, making conversion to a more compact, analysis-friendly format essential.
+
 ## Why GeoParquet?
 
 GeoParquet enables efficient and scalable storage of geospatial data. It leverages Parquet’s columnar architecture for compression and fast access to large volumes of information, while remaining fully compatible with the Apache Arrow and Parquet ecosystems. By embedding geometry-specific metadata (points, lines, polygons) directly within the Parquet schema, GeoParquet makes spatial data immediately interpretable by libraries such as GDAL, GeoPandas and others across multiple languages (Python, Java, C++), without sacrificing performance or advanced spatial operations.
 
 **Key advantages of GeoParquet include:**
 
-* **Efficiency and compression**: Columnar storage dramatically reduces file sizes and boosts read/write speeds.
-* **Interoperability**: As an open, widely supported standard, GeoParquet integrates seamlessly into diverse platforms and tools.
-* **Scalability**: Designed for very large datasets, GeoParquet is ideal for data pipelines, geospatial analysis, and Big Data applications.
+- **Efficiency and compression**: Columnar storage dramatically reduces file sizes and boosts read/write speeds.
+- **Interoperability**: As an open, widely supported standard, GeoParquet integrates seamlessly into diverse platforms and tools.
+- **Scalability**: Designed for very large datasets, GeoParquet is ideal for data pipelines, geospatial analysis, and Big Data applications.
 
-Although gridded surface-current fields—are typically stored in NetCDF (the de facto standard for multi-dimensional scientific data, using CF metadata conventions to describe time, latitude, longitude, depth and variable attributes), NetCDF is less efficient than GeoParquet when processing massive volumes of data. 
+Although gridded surface-current fields—are typically stored in NetCDF (the de facto standard for multi-dimensional scientific data, using CF metadata conventions to describe time, latitude, longitude, depth and variable attributes), NetCDF is less efficient than GeoParquet when processing massive volumes of data.
 
 The HF-EOLUS project routinely handles very large datasets—sometimes numbering in the millions of records—and requires highly efficient analysis pipelines, which motivated our adoption of GeoParquet.
 
