@@ -51,8 +51,15 @@ In this variant, asset files themselves are included in the same directory hiera
 
 A relative published catalog builds on the self-contained pattern by adding a single absolute self link at the root to establish its online location. All other hyperlinks remain relative, so the catalog retains its offline portability while also providing a stable, authoritative URL for published deployments.
 
-## Especificaciones para HF-EOLUS
+## HF-EOLUS Specifications
 
 ### Radial Metrics
 
-En nuestras especificaciones para Radial Metrics tenemos, para cada timestamp, un fichero geoparquet para los radial metrics provenientes del pico de bragg positivo y otro para el negativo. Estos son nuestros assets. Con el fin de facilitar su ingestion en una bese de datos (por ejemplo Athena en AWS) Todos los assets de una estacion se almacenan en un mismo directorio assets. Un item incluye los dos ficheros geoparquet de cada timestamp (el que contiene los radial metrics del pico positivo y el que contiene los radial metrics del pico negativo). Los items de una estacion se organizan en colecciones. Una coleccion son todos los radial metrics de una estacion procesados un mismo Antenna Pattern. Por tanto todos los items de una coleccion tienen en comun el UUID del pattern empleado para procesarlos. Las colecciones de periodos de antenna pattern se organizan en estaciones mediante un catalogo. Un catalogo de estaciones es la raiz del catalogo STAC.
+For each timestamp we publish two GeoParquet files: one containing radial metrics derived from the **positive** Bragg peak and another from the **negative** peak. These files constitute the data assets referenced by a STAC Item. To streamline ingestion into analytical databases—such as AWS Athena or DuckDB—all assets for a station are stored in a dedicated `assets/` directory so that time-partitioned queries can scan them efficiently.
+
+Each Item bundles the pair of GeoParquet assets for a specific timestamp alongside metadata such as the station identifier, acquisition time, and processing parameters. Items for a station are grouped into Collections. A Collection encompasses all radial metrics from a station processed with a particular Antenna Pattern (APM); consequently every Item in the Collection shares the APM’s UUID, which is recorded as a Collection property.
+
+Collections representing distinct APM periods roll up into a station-level Catalog, and the set of station catalogs is linked together under a single root STAC Catalog. Each Item is stored as a `*.stac.json` file located alongside its assets, enabling the catalog to remain self-contained when copied or hosted from object storage. The Collection uses STAC’s [Table extension](https://github.com/stac-extensions/table) to document the tabular schema—column names, types, and units—so that clients can interpret the GeoParquet data without inspecting every file.
+
+Asset filenames follow a consistent pattern of `{station_id}_{timestamp}_{bragg}.parquet`, where `bragg` is `pos` or `neg` for the positive and negative peaks, respectively. Each Item JSON adopts the same stem—`{station_id}_{timestamp}.stac.json`—so relative links remain stable even when catalogs are copied between storage locations or published online.
+Timestamps are encoded in UTC using ISO 8601 so that simple lexical sorting also arranges Items chronologically.
