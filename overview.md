@@ -18,7 +18,7 @@ The GeoParquet specifications are applied uniformly to both HF-Radar data and me
 
 ## STAC
 
-The SpatioTemporal Asset Catalog (STAC) provides a lightweight framework for publishing geospatial metadata. For details of the STAC specifications implemented in HF-EOLUS, refer to the [STAC Specification](stac_specs.md). 
+STAC provides a lightweight framework for publishing geospatial metadata. For details of the STAC specifications implemented in HF-EOLUS, refer to the [STAC Specification](stac_specs.md). 
 
 ### HF-Radar
 
