@@ -10,6 +10,14 @@ HF-Radars are coastal radar systems designed to measure surface currents over wi
 
 Because every individual echo is retained, data volumes grow rapidly; even when restricted to spectral bands containing current information, a half-hour sampling interval can yield more than one million echoes in under a week. Efficient storage and organization are therefore essential for long-term analyses.
 
+Radial Metrics are typically exported by CODAR’s native software and by tools like SeaSondeR in the **LLUV** format, a simple ASCII table. Each LLUV file is organized into three sections:
+
+1. A header with global metadata such as timestamps, site identifiers, and processing parameters.
+2. A main table listing individual echoes with their bearing, range, signal strength, and related attributes.
+3. A secondary summary table that groups echoes by range bins to provide aggregate statistics per distance.
+
+Although human-readable, LLUV—much like CSV—does not scale efficiently for long time series, making conversion to a more compact, analysis-friendly format essential.
+
 ## GeoParquet Format
 
 GeoParquet v1.1.0 extends Apache Parquet with standardized conventions for geospatial data. It describes how geometry columns, coordinate reference systems (CRS), and file metadata must be encoded to ensure interoperability across tools. See the [GeoParquet Specification](geoparquet_specs.md) for the full set of rules and examples applied in project HF-EOLUS.
