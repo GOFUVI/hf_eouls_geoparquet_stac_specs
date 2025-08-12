@@ -2,7 +2,7 @@
 
 ## Introduction
 
-El proyecto HF-EOLUS procesa grandes cantidades de datos, ya sean de HF-Radar para la inversion del viento, ya sean salidas de modelos meteorológicos para su interpolación. En ambos casos se requiere de un formato de datos eficiente que permitan la aplicación de pipelines de procesado en la nube, y una organización de los datos de acuerdo a estándares internacionales. Ambos objetivos se abordan en este proyecto mediante la aplicación de formato GeoParquet para el almacenamiento de los datos y de los estándares definidos por el SpatioTemporal Asset Catalog (STAC) para la organización de los mismos.
+The HF-EOLUS project processes large volumes of data, from HF-Radar observations used for wind inversion to meteorological model outputs used for interpolation. Both workflows require an efficient data format that enables cloud-based processing pipelines and organizes information according to international standards. This project meets those needs by storing data in the GeoParquet format and organizing it with the standards defined by the SpatioTemporal Asset Catalog (STAC).
 
 ### HF-Radar
 
@@ -14,7 +14,7 @@ Because every individual echo is retained, data volumes grow rapidly; even when 
 
 GeoParquet v1.1.0 extends Apache Parquet with standardized conventions for geospatial data. It describes how geometry columns, coordinate reference systems (CRS), and file metadata must be encoded to ensure interoperability across tools. See the [GeoParquet Specification](geoparquet_specs.md) for the full set of rules and examples applied in project HF-EOLUS.
 
-Las especificaciones GeoParquet se aplican por igual a los datos de HF-Radar y a las salidas de modelos meteorológicos.
+The GeoParquet specifications are applied uniformly to both HF-Radar data and meteorological model outputs.
 
 ## STAC
 
