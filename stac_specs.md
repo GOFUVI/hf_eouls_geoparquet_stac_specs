@@ -53,7 +53,7 @@ A relative published catalog builds on the self-contained pattern by adding a si
 
 ## HF-EOLUS Specifications
 
-### Radial Metrics
+### HF-Radar
 
 For each timestamp we publish two GeoParquet files: one containing radial metrics derived from the **positive** Bragg peak and another from the **negative** peak. These files constitute the data assets referenced by a STAC Item. To streamline ingestion into analytical databases—such as AWS Athena or DuckDB—all assets for a station are stored in a dedicated `assets/` directory so that time-partitioned queries can scan them efficiently.
 
