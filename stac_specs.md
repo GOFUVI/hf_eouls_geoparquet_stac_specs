@@ -2,9 +2,7 @@
 
 ## STAC Overview
 
-The SpatioTemporal Asset Catalog (STAC) specifications provide a standardized, lightweight framework for representing and discovering geospatial asset metadata. At its heart, STAC treats a “spatiotemporal asset” as any resource that captures information about the Earth at a specific location and time.
-
-STAC’s core remains intentionally minimal, with most functionality delivered through extensions. This modular approach has enabled its evolution into a mature standard, adopted by many production systems.
+The SpatioTemporal Asset Catalog (STAC) specifications provide a standardized, lightweight framework for representing and discovering geospatial asset metadata. At its heart, STAC treats a “spatiotemporal asset” as any resource that captures information about the Earth at a specific location and time. STAC’s core remains intentionally minimal, with most functionality delivered through extensions. This modular approach has enabled its evolution into a mature standard, adopted by many production systems.
 
 By following STAC, data providers avoid inventing bespoke metadata formats and interfaces, while data consumers benefit from a common set of conventions and tooling. This shared foundation reduces the effort required on both ends: publishers can export metadata in a well-defined structure, and clients can ingest it using existing libraries rather than crafting custom parsers or APIs.
 
@@ -15,7 +13,6 @@ The Item, Catalog, and Collection specifications define the essential JSON objec
 A STAC Item represents a single data record—typically one scene captured at a given time and place—and is modeled as a GeoJSON Feature. This ensures compatibility with GIS software and geospatial libraries. In addition to the GeoJSON geometry, each Item includes:
 
 - Temporal information for when the data is valid.
-- A thumbnail or preview image.
 - Asset links for direct download or streaming of the data.
 - Relationship links for navigating between related Items or other resources.
 
