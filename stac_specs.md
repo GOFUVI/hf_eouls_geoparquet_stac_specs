@@ -60,3 +60,10 @@ Collections representing distinct APM periods roll up into a station-level Catal
 
 Asset filenames follow a consistent pattern of `{station_id}_{timestamp}_{bragg}.parquet`, where `bragg` is `pos` or `neg` for the positive and negative peaks, respectively. Each Item JSON adopts the same stem—`{station_id}_{timestamp}.stac.json`—so relative links remain stable even when catalogs are copied between storage locations or published online.
 Timestamps are encoded in UTC using ISO 8601 so that simple lexical sorting also arranges Items chronologically.
+
+
+## References
+
+<ol>
+<li id="ref1">STAC Contributors. (2024). SpatioTemporal Asset Catalog (STAC) specification (Version 1.1.0). https://stacspec.org</li>
+</ol>
