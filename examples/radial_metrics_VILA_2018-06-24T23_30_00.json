@@ -1,0 +1,168 @@
+{
+  "type": "Feature",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/table/v1.2.0/schema.json"
+  ],
+  "id": "VILA_2018-06-24T23:30:00",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          -8.8617442,
+          43.1075277
+        ],
+        [
+          -8.8617442,
+          43.5666441
+        ],
+        [
+          -9.6373413,
+          43.5666441
+        ],
+        [
+          -9.6373413,
+          43.1075277
+        ],
+        [
+          -8.8617442,
+          43.1075277
+        ]
+      ]
+    ]
+  },
+  "bbox": [
+    -9.6373413,
+    43.1075277,
+    -8.8617442,
+    43.5666441
+  ],
+  "properties": {
+    "hf_site:code": "VILA",
+    "hf_site:location": [
+      -9.2108333,
+      43.1588833
+    ],
+    "radial_metrics:filters": {
+      "max_range": 150.0,
+      "bearing_ranges": [
+        [
+          0.0,
+          38.0
+        ],
+        [
+          217.0,
+          360.0
+        ]
+      ]
+    },
+    "table:primary_geometry": "geometry",
+    "table:columns": [
+      {
+        "name": "rowid",
+        "description": "Unique row identifier",
+        "type": "integer"
+      },
+      {
+        "name": "timestamp",
+        "description": "Date and time of observation (UTC)",
+        "type": "datetime"
+      },
+      {
+        "name": "Pwr",
+        "description": "Signal power of the selected solution (dB)",
+        "type": "number"
+      },
+      {
+        "name": "VELO",
+        "description": "Radial velocity (cm/s)",
+        "type": "number"
+      },
+      {
+        "name": "pos_bragg",
+        "description": "Indicator of Bragg peak partition (0 = negative, 1 = positive)",
+        "type": "string"
+      },
+      {
+        "name": "geometry",
+        "description": "Geometry of the measurement in WGS84 coordinate reference system encoded as WKB",
+        "type": "binary"
+      }
+    ],
+    "sci:doi": "10.5281/zenodo.16892223",
+    "sci:citation": "Herrera Cortijo, J. L., Fern\u00e1ndez-Baladr\u00f3n, A., Ros\u00f3n, G., Gil Coto, M., Dubert, J., & Varela Benvenuto, R. (2025). Project HF-EOLUS. Task 2. VILA & PRIO Radial Metrics GeoParquet Dataset. Derived from LLUV datasets and ingested in GeoParquet format. Zenodo. https://doi.org/10.5281/zenodo.16892223",
+    "providers": [
+      {
+        "name": "Instituto Tecnoloxico para o Control do Medio Mari\u00f1o de Galicia (INTECMAR)",
+        "description": "Spectra from INTECMAR's VILA and PRIO HF-Radar stations, between 2011-08-04 and 2023-11-23 have been transferred free of charge by the Observatorio Costeiro da Xunta de Galicia (<https://www.observatoriocosteiro.gal>) for their use. This Observatory is not responsible for the use of these data nor is it linked to the conclusions drawn with them. The Costeiro da Xunta de Galicia Observatory is part of the RAIA Observatory (<http://www.marnaraia.org>).",
+        "roles": [
+          "producer"
+        ],
+        "url": "https://intecmar.gal"
+      },
+      {
+        "name": "Grupo de Ocenografia F\u00edsica de la Universidade de Vigo (GOFUV)",
+        "description": "The spectra data have been processed into Radial Metrics and then ingested into these geoparquet files by the Grupo de Ocenografia F\u00edsica de la Universidade de Vigo (GOFUV) as part of the HF-EOLUS project (TED2021-129551B-I00). HF-EOLUS was financed by MICIU/AEI /10.13039/501100011033 and by the European Union NextGenerationEU/PRTR - BDNS 598843 - Component 17 - Investment I3. Members of the Marine Research Centre (CIM) of the University of Vigo have participated in the development of this repository. Processing details can be found at https://doi.org/10.5281/zenodo.16679609, ingestion details at https://doi.org/10.5281/zenodo.16679610, and the data at https://doi.org/10.5281/zenodo.16892223.",
+        "roles": [
+          "processor"
+        ],
+        "url": "https://gofuvi.org"
+      }
+    ],
+    "datetime": "2018-06-24T23:30:00Z",
+    "pattern_uui": "5C42DF92-DBC9-4F39-83E3-969A69A12AAC",
+    "table:row_count": 317
+  },
+  "links": [
+    {
+      "rel": "collection",
+      "href": "../collection.json",
+      "type": "application/json",
+      "title": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
+    },
+    {
+      "rel": "describedby",
+      "href": "header_VILA_2018-06-24T23:30:00.json",
+      "type": "application/geo+json",
+      "title": "header_VILA_2018-06-24T23:30:00"
+    },
+    {
+      "rel": "related",
+      "href": "rng_info_VILA_2018-06-24T23:30:00.json",
+      "type": "application/geo+json",
+      "title": "rng_info_VILA_2018-06-24T23:30:00"
+    },
+    {
+      "rel": "prev",
+      "href": "radial_metrics_VILA_2018-06-24T23:00:00.json",
+      "type": "application/geo+json",
+      "title": "radial_metrics_VILA_2018-06-24T23:00:00"
+    },
+    {
+      "rel": "next",
+      "href": "radial_metrics_VILA_2018-06-25T00:00:00.json",
+      "type": "application/geo+json",
+      "title": "radial_metrics_VILA_2018-06-25T00:00:00"
+    }
+  ],
+  "assets": {
+    "neg_bragg_peak": {
+      "href": "../../radial_metrics/pos_bragg=0/timestamp=2018-06-24T23%3A30%3A00/VILA_2018-06-24T23:30:00_0.parquet",
+      "type": "application/x-parquet",
+      "title": "Radial Metrics - Negative Bragg Peak",
+      "roles": [
+        "data"
+      ]
+    },
+    "pos_bragg_peak": {
+      "href": "../../radial_metrics/pos_bragg=1/timestamp=2018-06-24T23%3A30%3A00/VILA_2018-06-24T23:30:00_0.parquet",
+      "type": "application/x-parquet",
+      "title": "Radial Metrics - Positive Bragg Peak",
+      "roles": [
+        "data"
+      ]
+    }
+  },
+  "collection": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
+}
