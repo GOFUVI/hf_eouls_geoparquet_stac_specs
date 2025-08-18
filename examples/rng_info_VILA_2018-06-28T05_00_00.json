@@ -1,0 +1,199 @@
+{
+  "type": "Feature",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/table/v1.2.0/schema.json"
+  ],
+  "id": "rng_info_VILA_2018-06-28T05:00:00",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          -8.4273191,
+          42.3822931
+        ],
+        [
+          -8.4273191,
+          44.213957
+        ],
+        [
+          -10.6522465,
+          44.213957
+        ],
+        [
+          -10.6522465,
+          42.3822931
+        ],
+        [
+          -8.4273191,
+          42.3822931
+        ]
+      ]
+    ]
+  },
+  "bbox": [
+    -10.6522465,
+    42.3822931,
+    -8.4273191,
+    44.213957
+  ],
+  "properties": {
+    "hf_site:code": "VILA",
+    "hf_site:location": [
+      -9.2108333,
+      43.1588833
+    ],
+    "radial_metrics:filters": {
+      "max_range": 150.0,
+      "bearing_ranges": [
+        [
+          0.0,
+          38.0
+        ],
+        [
+          217.0,
+          360.0
+        ]
+      ]
+    },
+    "table:primary_geometry": "geometry",
+    "table:columns": [
+      {
+        "name": "rowid",
+        "description": "Unique row identifier",
+        "type": "integer"
+      },
+      {
+        "name": "timestamp",
+        "description": "Date and time of observation (UTC)",
+        "type": "datetime"
+      },
+      {
+        "name": "SPRC",
+        "description": "Range cell index (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "RNGC",
+        "description": "Range cell range (km)",
+        "type": "number"
+      },
+      {
+        "name": "NF01",
+        "description": "Noise floor for loop 1 (db)",
+        "type": "number"
+      },
+      {
+        "name": "NF02",
+        "description": "Noise floor for loop 2 (db)",
+        "type": "number"
+      },
+      {
+        "name": "NF03",
+        "description": "Noise floor for monopole (db)",
+        "type": "number"
+      },
+      {
+        "name": "ALM1",
+        "description": "Doppler cell index for left first-order limit, negative Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "ALM2",
+        "description": "Doppler cell index for right first-order limit, negative Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "ALM3",
+        "description": "Doppler cell index for left first-order limit, positive Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "ALM4",
+        "description": "Doppler cell index for right first-order limit, positive Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "NVSC",
+        "description": "Number of MUSIC single solutions in the cell range (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "NVDC",
+        "description": "Number of MUSIC dual solutions in the cell range (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "NVAC",
+        "description": "Total number of radial vectors in the cell range (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "geometry",
+        "description": "Aggregated radial geometry encoded as WKB",
+        "type": "binary"
+      }
+    ],
+    "table:row_count": 21,
+    "sci:doi": "10.5281/zenodo.16892223",
+    "sci:citation": "Herrera Cortijo, J. L., Fern\u00e1ndez-Baladr\u00f3n, A., Ros\u00f3n, G., Gil Coto, M., Dubert, J., & Varela Benvenuto, R. (2025). Project HF-EOLUS. Task 2. VILA & PRIO Radial Metrics GeoParquet Dataset. Derived from LLUV datasets and ingested in GeoParquet format. Zenodo. https://doi.org/10.5281/zenodo.16892223",
+    "providers": [
+      {
+        "name": "Instituto Tecnoloxico para o Control do Medio Mari\u00f1o de Galicia (INTECMAR)",
+        "description": "Spectra from INTECMAR's VILA and PRIO HF-Radar stations, between 2011-08-04 and 2023-11-23 have been transferred free of charge by the Observatorio Costeiro da Xunta de Galicia (<https://www.observatoriocosteiro.gal>) for their use. This Observatory is not responsible for the use of these data nor is it linked to the conclusions drawn with them. The Costeiro da Xunta de Galicia Observatory is part of the RAIA Observatory (<http://www.marnaraia.org>).",
+        "roles": [
+          "producer"
+        ],
+        "url": "https://intecmar.gal"
+      },
+      {
+        "name": "Grupo de Ocenografia F\u00edsica de la Universidade de Vigo (GOFUV)",
+        "description": "The spectra data have been processed into Radial Metrics and then ingested into these geoparquet files by the Grupo de Ocenografia F\u00edsica de la Universidade de Vigo (GOFUV) as part of the HF-EOLUS project (TED2021-129551B-I00). HF-EOLUS was financed by MICIU/AEI /10.13039/501100011033 and by the European Union NextGenerationEU/PRTR - BDNS 598843 - Component 17 - Investment I3. Members of the Marine Research Centre (CIM) of the University of Vigo have participated in the development of this repository. Processing details can be found at https://doi.org/10.5281/zenodo.16679609, ingestion details at https://doi.org/10.5281/zenodo.16679610, and the data at https://doi.org/10.5281/zenodo.16892223.",
+        "roles": [
+          "processor"
+        ],
+        "url": "https://gofuvi.org"
+      }
+    ],
+    "datetime": "2018-06-28T05:00:00Z"
+  },
+  "links": [
+    {
+      "rel": "collection",
+      "href": "../collection.json",
+      "type": "application/json",
+      "title": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
+    },
+    {
+      "rel": "related",
+      "href": "radial_metrics_VILA_2018-06-28T05:00:00.json",
+      "type": "application/geo+json",
+      "title": "radial_metrics_VILA_2018-06-28T05:00:00"
+    },
+    {
+      "rel": "prev",
+      "href": "rng_info_VILA_2018-06-28T04:30:00.json",
+      "type": "application/geo+json",
+      "title": "rng_info_VILA_2018-06-28T04:30:00"
+    },
+    {
+      "rel": "next",
+      "href": "rng_info_VILA_2018-06-28T05:30:00.json",
+      "type": "application/geo+json",
+      "title": "rng_info_VILA_2018-06-28T05:30:00"
+    }
+  ],
+  "assets": {
+    "rng_info": {
+      "href": "../../rng_info/timestamp=2018-06-28T05%3A00%3A00/VILA_2018-06-28T05:00:00_0.parquet",
+      "type": "application/x-parquet",
+      "title": "Range Info",
+      "description": "Radial metrics stats summary by range cell",
+      "roles": [
+        "data"
+      ]
+    }
+  },
+  "collection": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
+}
