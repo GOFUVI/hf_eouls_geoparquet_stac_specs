@@ -4,7 +4,7 @@
   "stac_extensions": [
     "https://stac-extensions.github.io/table/v1.2.0/schema.json"
   ],
-  "id": "header_VILA_2018-06-21T19:00:00",
+  "id": "header_VILA_2018-06-21T18:00:00",
   "geometry": {
     "type": "Point",
     "coordinates": [
@@ -24,19 +24,6 @@
       -9.2108333,
       43.1588833
     ],
-    "radial_metrics:filters": {
-      "max_range": 150.0,
-      "bearing_ranges": [
-        [
-          0.0,
-          38.0
-        ],
-        [
-          217.0,
-          360.0
-        ]
-      ]
-    },
     "table:primary_geometry": "geometry",
     "table:columns": [
       {
@@ -86,37 +73,37 @@
         "url": "https://gofuvi.org"
       }
     ],
-    "datetime": "2018-06-21T19:00:00Z"
+    "datetime": "2018-06-21T18:00:00Z"
   },
   "links": [
     {
       "rel": "collection",
-      "href": "../collection.json",
+      "href": "../../collection.json",
       "type": "application/json",
       "title": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
     },
     {
       "rel": "describes",
-      "href": "radial_metrics_VILA_2018-06-21T19:00:00.json",
+      "href": "../radial_metrics/radial_metrics_VILA_2018-06-21T18:00:00.json",
       "type": "application/geo+json",
-      "title": "radial_metrics_VILA_2018-06-21T19:00:00"
+      "title": "radial_metrics_VILA_2018-06-21T18:00:00"
     },
     {
       "rel": "prev",
-      "href": "header_VILA_2018-06-21T18:30:00.json",
+      "href": "./header_VILA_2018-06-21T17:30:00.json",
       "type": "application/geo+json",
-      "title": "header_VILA_2018-06-21T18:30:00"
+      "title": "header_VILA_2018-06-21T17:30:00"
     },
     {
       "rel": "next",
-      "href": "header_VILA_2018-06-21T19:30:00.json",
+      "href": "./header_VILA_2018-06-21T18:30:00.json",
       "type": "application/geo+json",
-      "title": "header_VILA_2018-06-21T19:30:00"
+      "title": "header_VILA_2018-06-21T18:30:00"
     }
   ],
   "assets": {
     "header": {
-      "href": "../../header/timestamp=2018-06-21T19%3A00%3A00/VILA_2018-06-21T19:00:00_0.parquet",
+      "href": "../../../header/timestamp=2018-06-21T18%3A00%3A00/VILA_2018-06-21T18:00:00_0.parquet",
       "type": "application/x-parquet",
       "title": "LLUV Header",
       "description": "LLUV file header",

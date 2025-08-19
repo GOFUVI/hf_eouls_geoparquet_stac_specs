@@ -4,39 +4,39 @@
   "stac_extensions": [
     "https://stac-extensions.github.io/table/v1.2.0/schema.json"
   ],
-  "id": "VILA_2018-06-24T23:30:00",
+  "id": "rng_info_VILA_2018-06-21T18:00:00",
   "geometry": {
     "type": "Polygon",
     "coordinates": [
       [
         [
-          -8.8617442,
-          43.1075277
+          -8.0724451,
+          42.1192621
         ],
         [
-          -8.8617442,
-          43.5666441
+          -8.0724451,
+          44.4891614
         ],
         [
-          -9.6373413,
-          43.5666441
+          -11.0281618,
+          44.4891614
         ],
         [
-          -9.6373413,
-          43.1075277
+          -11.0281618,
+          42.1192621
         ],
         [
-          -8.8617442,
-          43.1075277
+          -8.0724451,
+          42.1192621
         ]
       ]
     ]
   },
   "bbox": [
-    -9.6373413,
-    43.1075277,
-    -8.8617442,
-    43.5666441
+    -11.0281618,
+    42.1192621,
+    -8.0724451,
+    44.4891614
   ],
   "properties": {
     "hf_site:code": "VILA",
@@ -44,19 +44,6 @@
       -9.2108333,
       43.1588833
     ],
-    "radial_metrics:filters": {
-      "max_range": 150.0,
-      "bearing_ranges": [
-        [
-          0.0,
-          38.0
-        ],
-        [
-          217.0,
-          360.0
-        ]
-      ]
-    },
     "table:primary_geometry": "geometry",
     "table:columns": [
       {
@@ -70,26 +57,72 @@
         "type": "datetime"
       },
       {
-        "name": "Pwr",
-        "description": "Signal power of the selected solution (dB)",
+        "name": "SPRC",
+        "description": "Range cell index (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "RNGC",
+        "description": "Range cell range (km)",
         "type": "number"
       },
       {
-        "name": "VELO",
-        "description": "Radial velocity (cm/s)",
+        "name": "NF01",
+        "description": "Noise floor for loop 1 (db)",
         "type": "number"
       },
       {
-        "name": "pos_bragg",
-        "description": "Indicator of Bragg peak partition (0 = negative, 1 = positive)",
-        "type": "string"
+        "name": "NF02",
+        "description": "Noise floor for loop 2 (db)",
+        "type": "number"
+      },
+      {
+        "name": "NF03",
+        "description": "Noise floor for monopole (db)",
+        "type": "number"
+      },
+      {
+        "name": "ALM1",
+        "description": "Doppler cell index for left first-order limit, negative Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "ALM2",
+        "description": "Doppler cell index for right first-order limit, negative Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "ALM3",
+        "description": "Doppler cell index for left first-order limit, positive Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "ALM4",
+        "description": "Doppler cell index for right first-order limit, positive Bragg peak (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "NVSC",
+        "description": "Number of MUSIC single solutions in the cell range (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "NVDC",
+        "description": "Number of MUSIC dual solutions in the cell range (integer)",
+        "type": "integer"
+      },
+      {
+        "name": "NVAC",
+        "description": "Total number of radial vectors in the cell range (integer)",
+        "type": "integer"
       },
       {
         "name": "geometry",
-        "description": "Geometry of the measurement in WGS84 coordinate reference system encoded as WKB",
+        "description": "Aggregated radial geometry encoded as WKB",
         "type": "binary"
       }
     ],
+    "table:row_count": 29,
     "sci:doi": "10.5281/zenodo.16892223",
     "sci:citation": "Herrera Cortijo, J. L., Fern\u00e1ndez-Baladr\u00f3n, A., Ros\u00f3n, G., Gil Coto, M., Dubert, J., & Varela Benvenuto, R. (2025). Project HF-EOLUS. Task 2. VILA & PRIO Radial Metrics GeoParquet Dataset. Derived from LLUV datasets and ingested in GeoParquet format. Zenodo. https://doi.org/10.5281/zenodo.16892223",
     "providers": [
@@ -110,55 +143,40 @@
         "url": "https://gofuvi.org"
       }
     ],
-    "datetime": "2018-06-24T23:30:00Z",
-    "pattern_uui": "5C42DF92-DBC9-4F39-83E3-969A69A12AAC",
-    "table:row_count": 317
+    "datetime": "2018-06-21T18:00:00Z"
   },
   "links": [
     {
       "rel": "collection",
-      "href": "../collection.json",
+      "href": "../../collection.json",
       "type": "application/json",
       "title": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
     },
     {
-      "rel": "describedby",
-      "href": "header_VILA_2018-06-24T23:30:00.json",
-      "type": "application/geo+json",
-      "title": "header_VILA_2018-06-24T23:30:00"
-    },
-    {
       "rel": "related",
-      "href": "rng_info_VILA_2018-06-24T23:30:00.json",
+      "href": "../radial_metrics/radial_metrics_VILA_2018-06-21T18:00:00.json",
       "type": "application/geo+json",
-      "title": "rng_info_VILA_2018-06-24T23:30:00"
+      "title": "radial_metrics_VILA_2018-06-21T18:00:00"
     },
     {
       "rel": "prev",
-      "href": "radial_metrics_VILA_2018-06-24T23:00:00.json",
+      "href": "./rng_info_VILA_2018-06-21T17:30:00.json",
       "type": "application/geo+json",
-      "title": "radial_metrics_VILA_2018-06-24T23:00:00"
+      "title": "rng_info_VILA_2018-06-21T17:30:00"
     },
     {
       "rel": "next",
-      "href": "radial_metrics_VILA_2018-06-25T00:00:00.json",
+      "href": "./rng_info_VILA_2018-06-21T18:30:00.json",
       "type": "application/geo+json",
-      "title": "radial_metrics_VILA_2018-06-25T00:00:00"
+      "title": "rng_info_VILA_2018-06-21T18:30:00"
     }
   ],
   "assets": {
-    "neg_bragg_peak": {
-      "href": "../../radial_metrics/pos_bragg=0/timestamp=2018-06-24T23%3A30%3A00/VILA_2018-06-24T23:30:00_0.parquet",
+    "rng_info": {
+      "href": "../../../rng_info/timestamp=2018-06-21T18%3A00%3A00/VILA_2018-06-21T18:00:00_0.parquet",
       "type": "application/x-parquet",
-      "title": "Radial Metrics - Negative Bragg Peak",
-      "roles": [
-        "data"
-      ]
-    },
-    "pos_bragg_peak": {
-      "href": "../../radial_metrics/pos_bragg=1/timestamp=2018-06-24T23%3A30%3A00/VILA_2018-06-24T23:30:00_0.parquet",
-      "type": "application/x-parquet",
-      "title": "Radial Metrics - Positive Bragg Peak",
+      "title": "Range Info",
+      "description": "Radial metrics stats summary by range cell",
       "roles": [
         "data"
       ]
