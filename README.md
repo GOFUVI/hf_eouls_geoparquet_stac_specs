@@ -1,4 +1,4 @@
-# HF-Radar Radial Metrics GeoParquet & STAC Specifications
+# HF-EOLUS Project GeoParquet & STAC Specifications
 
 This documentation describes how the **HF-EOLUS** project stores large volumes of high-frequency radar *Radial Metrics* data in the **GeoParquet** format and organizes them with **STAC** (SpatioTemporal Asset Catalog) metadata standards. It serves as a guide for technical users interested in data storage and cataloging strategies for geospatial datasets. While HF-Radar observations are the primary focus, the same principles apply to meteorological model outputs processed in the project. Key benefits include efficient, cloud-optimized storage and internationally standardized metadata for interoperability.
 
