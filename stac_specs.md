@@ -921,4 +921,6 @@ All HF-Radar data assets are stored as tabular GeoParquet files, each with a def
 
 ## References
 
-<ol\> <li id="ref1"\>STAC Contributors. (2024). SpatioTemporal Asset Catalog (STAC) specification (Version 1.1.0). https://stacspec.org</li\> </ol\>
+<ol> 
+<li id="ref1">STAC Contributors. (2024). SpatioTemporal Asset Catalog (STAC) specification (Version 1.1.0). https://stacspec.org</li\> 
+</ol>
