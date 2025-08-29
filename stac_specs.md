@@ -34,7 +34,7 @@ A **STAC Item** is the atomic unit of data in a STAC Catalog \-- it corresponds 
 
 -   An `assets` list (or dictionary): each asset entry provides a link (URL or path) to an actual data file plus some metadata like file type, size, or descriptive title.
 
--   A `links` list: links to related entities (e.g., a link to its parent Collection, links to previous/next in a time series, or a link to license info). These links allow the catalog to be navigable.
+-   A `links` list: links to related entities (e.g., a link to its parent Collection, related items, or license info). These links allow the catalog to be navigable.
 
 Because a STAC Item is a *GeoJSON Feature*, it ensures immediate compatibility with GIS tools. One can take the geometry and properties and plot them on a map, or index them in a spatial database, etc. The use of GeoJSON also means the spatial reference is by default WGS84 geographic (lat/lon), which is typically expected for catalogs (the geometry field in the Item is assumed to be in WGS84 coordinates unless otherwise specified). This is convenient because our HF-Radar data and model data are indeed referenced to WGS84 lat/lon (as indicated by the GeoParquet CRS as well).
 
@@ -484,18 +484,6 @@ In this Collection JSON, we include fields like `extent` (with the spatial bound
           "href": "../rng_info/rng_info_VILA_2018-06-21T18:00:00.json",
           "type": "application/geo+json",
           "title": "rng_info_VILA_2018-06-21T18:00:00"
-        },
-        {
-          "rel": "next",
-          "href": "./radial_metrics_VILA_2018-06-21T18:30:00.json",
-          "type": "application/geo+json",
-          "title": "radial_metrics_VILA_2018-06-21T18:30:00"
-        },
-        {
-          "rel": "prev",
-          "href": "./radial_metrics_VILA_2018-06-21T17:30:00.json",
-          "type": "application/geo+json",
-          "title": "radial_metrics_VILA_2018-06-21T17:30:00"
         }
       ],
       "assets": {
@@ -519,7 +507,7 @@ In this Collection JSON, we include fields like `extent` (with the spatial bound
       "collection": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
     }
 
-This **radial metrics item** has two assets (negative and positive Bragg peak Parquet files). The item `geometry` is a polygon approximating the station's coverage area, and the `bbox` is provided accordingly. The properties include some station info and filtering parameters used (e.g., the maximum range and bearing sectors) and a snippet of the table schema (via `table:columns`) for clarity. We include `table:row_count` to indicate how many rows (echoes) are in this time\'s data. The `links` section links to the parent collection and connects this item to its corresponding header and range info items (via `describedby` and `related` links). It also has `prev` and `next` links to the adjacent radial metrics items in time for easy navigation. *Note:* In the table schema above, the `geometry` column contains the point location of each individual radar echo, whereas the Item's own `geometry` covers the entire measurement area.
+This **radial metrics item** has two assets (negative and positive Bragg peak Parquet files). The item `geometry` is a polygon approximating the station's coverage area, and the `bbox` is provided accordingly. The properties include some station info and filtering parameters used (e.g., the maximum range and bearing sectors) and a snippet of the table schema (via `table:columns`) for clarity. We include `table:row_count` to indicate how many rows (echoes) are in this time\'s data. The `links` section links to the parent collection and connects this item to its corresponding header and range info items (via `describedby` and `related` links). Temporal navigation is performed by listing or searching items ordered by `datetime` (no `prev`/`next` links are included in Items). *Note:* In the table schema above, the `geometry` column contains the point location of each individual radar echo, whereas the Item's own `geometry` covers the entire measurement area.
 
 -   **Header Item (metadata for the same timestamp):**
 
@@ -612,18 +600,6 @@ This **radial metrics item** has two assets (negative and positive Bragg peak Pa
           "href": "../radial_metrics/radial_metrics_VILA_2018-06-21T18:00:00.json",
           "type": "application/geo+json",
           "title": "radial_metrics_VILA_2018-06-21T18:00:00"
-        },
-        {
-          "rel": "prev",
-          "href": "./header_VILA_2018-06-21T17:30:00.json",
-          "type": "application/geo+json",
-          "title": "header_VILA_2018-06-21T17:30:00"
-        },
-        {
-          "rel": "next",
-          "href": "./header_VILA_2018-06-21T18:30:00.json",
-          "type": "application/geo+json",
-          "title": "header_VILA_2018-06-21T18:30:00"
         }
       ],
       "assets": {
@@ -803,18 +779,6 @@ The **header item** contains the metadata records from the original radar file (
           "href": "../radial_metrics/radial_metrics_VILA_2018-06-21T18:00:00.json",
           "type": "application/geo+json",
           "title": "radial_metrics_VILA_2018-06-21T18:00:00"
-        },
-        {
-          "rel": "prev",
-          "href": "./rng_info_VILA_2018-06-21T17:30:00.json",
-          "type": "application/geo+json",
-          "title": "rng_info_VILA_2018-06-21T17:30:00"
-        },
-        {
-          "rel": "next",
-          "href": "./rng_info_VILA_2018-06-21T18:30:00.json",
-          "type": "application/geo+json",
-          "title": "rng_info_VILA_2018-06-21T18:30:00"
         }
       ],
       "assets": {
@@ -833,7 +797,7 @@ The **header item** contains the metadata records from the original radar file (
 
 The **range info item** provides summary metrics for each range cell (distance bin) at the given time. We use a polygon approximating the full coverage area of the radar as the Item\'s geometry (similar to the radial metrics item). The properties include the station info and the table schema (fields such as range cell index, range distance in km, counts of echoes, and other diagnostics). The `rel: related` link points to the main radial metrics item. The asset is the Parquet file containing the range-wise summary table, and the `id` is prefixed with `"rng_info_"` to distinguish it. Within the range info table, each row's `geometry` is identical and encodes the Collection’s global bounding box as a Polygon (i.e., the same geometry for all rows); per-range geometries are not provided.
 
-All three items share the same `datetime` timestamp and belong to the same Collection (`VILA_2018-06-21T17:30:00_2018-06-30T23:30:00`). Through the interlinking `links`, one can move between the main data and its ancillary info, or iterate over time using the `prev`/`next` links within each series of items (radial metrics series, header series, range info series).
+All three items share the same `datetime` timestamp and belong to the same Collection (`VILA_2018-06-21T17:30:00_2018-06-30T23:30:00`). Through the interlinking `links`, one can move between the main data and its ancillary info. Temporal navigation is achieved by listing or searching items ordered by `datetime` within each series (radial metrics series, header series, range info series).
 
 This example demonstrates how the STAC files are structured and interlinked for our HF-Radar radial metrics. In practice, a user starting at the root catalog can drill down to a station, pick a collection, then find items of interest by time. Once a particular Item (e.g., a radial metrics item) is found, its links lead to the associated header and range info items for complete context. Because we adhere to STAC and its extensions, the entire catalog can be loaded with standard libraries, enabling programmatic search and retrieval of HF-Radar data in the HF-EOLUS project.
 
