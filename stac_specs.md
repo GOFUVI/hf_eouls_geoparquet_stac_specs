@@ -766,7 +766,7 @@ The **header item** contains the metadata records from the original radar file (
           },
           {
             "name": "geometry",
-            "description": "Aggregated radial geometry encoded as WKB",
+            "description": "Global collection bounding-box geometry encoded as WKB; identical across all rows",
             "type": "binary"
           }
         ],
@@ -831,7 +831,7 @@ The **header item** contains the metadata records from the original radar file (
       "collection": "VILA_2018-06-21T17:30:00_2018-06-30T23:30:00"
     }
 
-The **range info item** provides summary metrics for each range cell (distance bin) at the given time. We use a polygon approximating the full coverage area of the radar as the Item\'s geometry (similar to the radial metrics item). The properties include the station info and the table schema (fields such as range cell index, range distance in km, counts of echoes, and other diagnostics). The `rel: related` link points to the main radial metrics item. The asset is the Parquet file containing the range-wise summary table, and the `id` is prefixed with `"rng_info_"` to distinguish it. Within the range info table, each row's `geometry` is a line representing the arc of that particular range cell (so the Item's polygon covers the whole area, while each data row has a line geometry for its range segment).
+The **range info item** provides summary metrics for each range cell (distance bin) at the given time. We use a polygon approximating the full coverage area of the radar as the Item\'s geometry (similar to the radial metrics item). The properties include the station info and the table schema (fields such as range cell index, range distance in km, counts of echoes, and other diagnostics). The `rel: related` link points to the main radial metrics item. The asset is the Parquet file containing the range-wise summary table, and the `id` is prefixed with `"rng_info_"` to distinguish it. Within the range info table, each row's `geometry` is identical and encodes the Collection’s global bounding box as a Polygon (i.e., the same geometry for all rows); per-range geometries are not provided.
 
 All three items share the same `datetime` timestamp and belong to the same Collection (`VILA_2018-06-21T17:30:00_2018-06-30T23:30:00`). Through the interlinking `links`, one can move between the main data and its ancillary info, or iterate over time using the `prev`/`next` links within each series of items (radial metrics series, header series, range info series).
 
@@ -917,7 +917,7 @@ All HF-Radar data assets are stored as tabular GeoParquet files, each with a def
   **NVSC**        Number of MUSIC single solutions in the cell range (integer)
   **NVDC**        Number of MUSIC dual solutions in the cell range (integer)
   **NVAC**        Total number of radial vectors in the cell range (integer)
-  **geometry**    Aggregated radial geometry encoded as WKB
+  **geometry**    Global collection bounding-box geometry encoded as WKB; identical across all rows
 
 ## References
 
