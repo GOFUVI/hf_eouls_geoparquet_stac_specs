@@ -6,9 +6,15 @@ This inventory centralizes the traceability requirements defined in the internal
   - DOI references: workflow 10.5281/zenodo.17096796; dataset/STAC 10.5281/zenodo.16892223.
   - STAC catalog root: `hf_radial_metrics_aws_ingestion/hf_ingestion/catalog.json` (station sub-catalogs under `VILA/` and `PRIO/`, delivered as compressed archives on Zenodo).
   - Partition scheme: `pos_bragg={positive|negative}/timestamp=<ISO8601 slot>` (timestamps percent-encode `:`) so each Parquet shard retains the Bragg peak polarity and the original LLUV acquisition time.
-  - GeoParquet deliverables: Pending.
-  - Critical columns: Pending.
-  - STAC extensions: Pending.
+  - GeoParquet deliverables:
+    - `radial_metrics/` — per-echo GeoParquet tables with point geometries derived from LLUV `LOND/LATD`, split by Bragg peak polarity and timestamp; files embed Glue/Athena statistics and are the primary inputs to all downstream analytics.
+    - `header/` — key/value metadata rows from every LLUV header, each stamped with the acquisition time and site code plus a point geometry at the radar location so header provenance can be spatially filtered.
+    - `rng_info/` — range-bin diagnostics where each row aggregates MUSIC statistics for a radial ring and stores its great-circle arc as a multiline geometry, enabling QC of noise-floor and Bragg-window parameters by distance.
+  - Critical columns:
+    - `timestamp` (UTC) drives partition folders and STAC `datetime`; required by Athena for temporal filtering.
+    - `pos_bragg` indicates positive (`1`) or negative (`0`) Bragg peak; governs partition pruning and ties every Item to the correct asset.
+    - Echo-level metrics kept by default: `Pwr`, `VELO`, `RNGE`, `BEAR`, `LOND`, `LATD`, plus derived `geometry` (WKB). Header tables expose `metakey/metavalue`, while `rng_info` highlights `SPRC`, `RNGC`, `NVAC`, and Bragg window columns (`ALM1`…`ALM4`).
+  - STAC extensions: Collections and Items declare the **Table Extension v1.2.0** to publish `table:columns`, `table:primary_geometry`, and `table:row_count`; they also expose custom `hf_site:*` and `radial_metrics:*` properties plus `sci:doi`/`sci:citation` fields for citation traceability, mirroring the JSON bundled under `hf_ingestion/`.
 
 - **hf_eolus_sar_ingestion**
   - DOI references: workflow 10.5281/zenodo.17096926; dataset/STAC 10.5281/zenodo.17100125.
@@ -30,9 +36,15 @@ This inventory centralizes the traceability requirements defined in the internal
   - DOI references: workflow 10.5281/zenodo.17104924; dataset/STAC 10.5281/zenodo.17115413.
   - STAC catalog roots: `hf_eolus_geo_tools/vila_catalog/catalog.json`, `hf_eolus_geo_tools/prio_catalog/catalog.json`, and `hf_eolus_geo_tools/sar_catalog/catalog.json` (each released as compressed archives on Zenodo).
   - Partition scheme: `pos_bragg={0|1}/1.parquet` for the HF-radar aggregates per station; SAR-driven aggregates are consolidated into single files under `assets/data.parquet`, inheriting any optional partition columns defined at finalization.
-  - GeoParquet deliverables: Pending.
-  - Critical columns: Pending.
-  - STAC extensions: Pending.
+  - GeoParquet deliverables:
+    - `vila_aggregated/pos_bragg={0|1}/0.parquet` and `prio_aggregated/pos_bragg={0|1}/0.parquet` — half-hour aggregates per grid `node_id`, generated after mapping raw echoes to grid nodes and projecting VELO toward a reference point; each partition is compressed into a single GeoParquet shard.
+    - `sar_aggregated/data.parquet` — Sentinel-1 OWI wind statistics mapped to the same grid and consolidated (no directory partitions) for ingestion into the ANN workflow.
+    - `grid_nodes_*.parquet` snapshots and the `geo_join_output*` mapping tables — node definitions (point geometry per node) plus row-to-node lookups kept as GeoParquet to rerun aggregation or regenerate STAC without recreating the grid.
+  - Critical columns:
+    - Shared keys: `timestamp`, `node_id`, and `geometry` (WKB/CRS84) appear in every aggregate and function as STAC `table:primary_geometry`.
+    - HF-radar stats: `n`, `pwr_*` (mean/median/stddev/min/max/mad/n), and `velo_*` summaries for the VELO projection; `pos_bragg` remains the partition discriminator and is encoded both in folder names and STAC hierarchy.
+    - SAR stats: `owiwindspeed_*` and `owiwinddirection_*` families produced by the directional wrapper; magnitude-weighted direction fields are carried alongside sample counts to preserve QC context.
+  - STAC extensions: All Collections/Items depend on the **Table Extension v1.2.0** to advertise schema metadata, and reuse the `sci:*` citation block plus license/provider metadata defined in `stac_properties_collection_{hf,sar}.json`; HF catalogs additionally keep the custom `hf_site:*` namespace for station context.
 
 - **hf-wind-inversion**
   - DOI references: workflow 10.5281/zenodo.17464519; dataset/STAC 10.5281/zenodo.17464583.
