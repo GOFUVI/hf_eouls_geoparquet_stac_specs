@@ -27,3 +27,9 @@ Revisé con el usuario la aclaración sobre el flujo Geo Tools y actualicé `REA
 
 # 2025-11-06T15:05:14Z
 `TODO.md:12` – Verifiqué que el nuevo capítulo encaja con el resto del documento (tabla de contenidos, transición con la sección de ejemplos y el apartado de columnas) y actualicé `TODO.md` para dejar la tarea cerrada. No se requieren cambios adicionales en otros ficheros hasta completar la tarea 13, centrada en detallar assets y sidecars dentro del capítulo recién creado.
+
+# 2025-11-06T16:30:00Z
+`TODO.md:13` – Desarrollé cada subsección del capítulo “Dataset-specific profiles” en `stac_specs.md` con los datos del inventario: detallé la jerarquía de catálogos, Collections e Items por flujo, enumeré los assets publicados (GeoParquet, sidecars JSON/SQL, manifests) y los `roles`/`rel` que conectan Items relacionados, y documenté las extensiones STAC activas (Table, Processing, Scientific) junto a las notas de trazabilidad. Destaqué la independencia del catálogo de MeteoGalicia y cómo los enlazados `derived_from` encadenan ingestión → agregación → ANN → recurso. Dejé la tarea en revisión actualizando `TODO.md`.
+
+# 2025-11-06T17:24:24Z
+`TODO.md:13` – Finalicé la documentación del capítulo de perfiles STAC contrastando cada catálogo real (radial metrics, SAR, boyas, geo tools, wind inversion, wind resource e interpolación) con sus carpetas: corregí la descripción de assets (p.ej. sentinel-1 sin sidecars, boyas solo con el Parquet), los enlaces reales (`describedby`, ausencia de `derived_from` en geo tools/inversion) y la separación de catálogos hermanos en MeteoGalicia. Dejó alineados `stac_specs.md`, `dataset_inventory.md` y `geoparquet_specs.md` con la estructura verificada.

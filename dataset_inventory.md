@@ -21,9 +21,7 @@ This inventory centralizes the traceability requirements defined in the internal
   - STAC catalog root: `hf_eolus_sar_ingestion/hf_eolus_sar/collection.json` (daily Items under `items/`, delivered as a compressed archive on Zenodo).
   - Partition scheme: `assets/date=YYYY-MM-DD/part-*.parquet`, aligned with the Athena partition column loaded via `MSCK REPAIR`.
   - GeoParquet deliverables:
-    - `assets/date=YYYY-MM-DD/YYYY-MM-DD.parquet` — one GeoParquet shard per observation day, storing every OWI vector as a CRS84 point with deterministic `rowid` and embedded GeoParquet metadata (WKB encoding, polygon orientation counterclockwise, spherical edges). Files inherit Glue/Athena stats via PyArrow’s dataset writer so downstream SQL engines can prune by `date`.
-    - `lineage.json` — maps each `date` partition to the Sentinel-1 OCN SAFE archives processed that day, enabling the Processing extension lineage strings to be regenerated.
-    - `columns.sql` — Athena DDL snippet emitted alongside the dataset so the external table can be recreated with the exact column typing used during CTAS (timestamp/radial components stored as DOUBLE, `rowid` coerced to BIGINT).
+    - `assets/date=YYYY-MM-DD/YYYY-MM-DD.parquet` — one GeoParquet shard per observation day, storing every OWI vector as a CRS84 point with deterministic `rowid` and embedded GeoParquet metadata (WKB encoding, polygon orientation counterclockwise, spherical edges). Files inherit Glue/Athena stats via PyArrow’s dataset writer so downstream SQL engines can prune by `date`. No per-day JSON or SQL sidecars are shipped; schema and lineage live in the STAC metadata bundled with the catalog.
   - Critical columns:
     - `firstMeasurementTime` / `lastMeasurementTime` define the Item `datetime` bounds and feed Athena predicates; they remain TIMESTAMP(UTC) columns inside every Parquet shard.
     - `owiLon`, `owiLat`, and `geometry` (WKB Point, CRS84) power spatial filtering and constitute the declared GeoParquet primary geometry; lon/lat are kept explicitly for analytical joins even though geometry exists.
@@ -32,15 +30,14 @@ This inventory centralizes the traceability requirements defined in the internal
     - `date` (STRING) is the Hive/Athena partition column, mirroring the `assets/date=...` folder layout and the STAC Item identifier.
   - STAC extensions:
     - Collections publish the **Table Extension v1.2.0** (`table:tables`, `table:row_count`, and `table:primary_geometry=geometry`) and reuse the Scientific metadata block (`sci:doi`, `sci:citation`, `providers`) injected via `stac_properties_collection.json`.
-    - Items enable both the **Table Extension v1.2.0** and the **Processing Extension v1.1.0**; the latter carries `processing:lineage` strings built from `lineage.json`, while the former lists the OWI schema so STAC clients can introspect Parquet columns without reading the files.
+    - Items enable both the **Table Extension v1.2.0** and the **Processing Extension v1.1.0**; the latter carries `processing:lineage` strings embedded directly in each STAC Item (enumerating the Sentinel-1 SAFE archives for that day), while the former lists the OWI schema so STAC clients can introspect Parquet columns without reading the files.
 
 - **hf_eolus_pde_buoy_ingestion**
   - DOI references: workflow 10.5281/zenodo.17097949; dataset/STAC 10.5281/zenodo.17098038.
   - STAC catalog root: `hf_eolus_pde_buoy_ingestion/.stac/buoy_ingestion/collection.json` (published as a compressed archive on Zenodo).
   - Partition scheme: one GeoParquet snapshot per buoy, no directory partitions; the buoy identifier maps directly to the asset filename.
   - GeoParquet deliverables:
-    - `assets/<buoy>.parquet` — consolidated hourly wind time series per buoy (e.g., `Vilano.parquet`), produced via Athena CTAS and rewritten with embedded GeoParquet metadata (`geo` block set to CRS84, WKB Point at the buoy location). Because there are no folder partitions, each file is a complete chronology for that buoy and is the asset exposed in STAC.
-    - `ctas.sql` (captured per run) and the ingestion log enumerate the Athena SQL used to recreate the Parquet snapshot, providing provenance for the exact column coercions applied (`wind_speed_str`→DOUBLE, `wind_direction_str`→INT).
+    - `assets/<buoy>.parquet` — consolidated hourly wind time series per buoy (e.g., `Vilano.parquet`), produced via Athena CTAS and rewritten with embedded GeoParquet metadata (`geo` block set to CRS84, WKB Point at the buoy location). Because there are no folder partitions, each file is a complete chronology for that buoy and is the asset exposed in STAC. The `ctas.sql` script stored at the repository root documents the SQL used to generate the Parquet snapshots, but it is not published as an Item asset.
   - Critical columns:
     - `timestamp` (`TIMESTAMP`) is the sole temporal dimension; it is parsed from the PdE CSV strings and becomes the STAC `datetime`, enabling hourly slicing without repartitioning.
     - `wind_speed` (`DOUBLE`) and `wind_dir` (`INT`) are the physical measurements consumed by downstream aggregation/ANN workflows; they remain nullable because the source CSV marks calm/invalid samples as blanks.

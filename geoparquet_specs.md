@@ -50,13 +50,13 @@ HF-radar radial metrics are rewritten from CODAR LLUV spectra into three GeoParq
 
 ### 2.2 Sentinel-1 SAR ingestion
 
-The Sentinel-1 workflow produces one GeoParquet shard per observation day under `assets/date=YYYY-MM-DD/YYYY-MM-DD.parquet`, complemented by auxiliary JSON/DDLs that capture lineage and column typing.
+The Sentinel-1 workflow produces one GeoParquet shard per observation day under `assets/date=YYYY-MM-DD/YYYY-MM-DD.parquet`; lineage and schema metadata are surfaced through STAC (Processing/Table extensions) rather than through extra files inside the dataset bundle.
 
 **Geometry and CRS.** Each shard declares `primary_column=geometry`, with `geometry_types=["Point"]`, `encoding="WKB"`, and `crs` pointing to CRS84. Optional polygon footprints, when exported, reuse the same metadata block but add `orientation="counterclockwise"` and `edges="spherical"` so swath analyses retain directional context. Longitude and latitude columns stay in the schema for compatibility with analytics engines that prefer scalar coordinates.
 
-**Partitioning and metadata.** The `date` Hive partition is materialised both in the folder path and as a STRING column to accelerate Athena repairs. `firstMeasurementTime` and `lastMeasurementTime` are persisted verbatim as TIMESTAMP(UTC) columns and echoed into the STAC items’ temporal extent. The `geo` metadata advertises the bounding box of each day, while `lineage.json` is transformed into `processing:lineage` strings but does not modify the GeoParquet payload.
+**Partitioning and metadata.** The `date` Hive partition is materialised both in the folder path and as a STRING column to accelerate Athena repairs. `firstMeasurementTime` and `lastMeasurementTime` are persisted verbatim as TIMESTAMP(UTC) columns and echoed into the STAC items’ temporal extent. The `geo` metadata advertises the bounding box of each day, and the ingestion pipeline writes the `processing:lineage` strings directly into the Items without producing intermediate JSON sidecars.
 
-**Schema highlights.** The core OWI measurements (`owiWindSpeed`, `owiWindDirection`, `owiMask`, `owiHeading`, `owiRadVel`, `owiWindQuality`, `owiInversionQuality`) remain DOUBLE/INT columns following the CTAS typing captured in `columns.sql`. `rowid` is a deterministic BIGINT hash used as a foreign key by the aggregation toolkit. Every file keeps ESA quality bits untouched so downstream consumers can filter by reliability without revisiting the SAFE products.
+**Schema highlights.** The core OWI measurements (`owiWindSpeed`, `owiWindDirection`, `owiMask`, `owiHeading`, `owiRadVel`, `owiWindQuality`, `owiInversionQuality`) remain DOUBLE/INT columns following the CTAS typing documented in the ingestion scripts. `rowid` is a deterministic BIGINT hash used as a foreign key by the aggregation toolkit. Every file keeps ESA quality bits untouched so downstream consumers can filter by reliability without revisiting the SAFE products.
 
 ### 2.3 Puertos del Estado buoy ingestion
 
