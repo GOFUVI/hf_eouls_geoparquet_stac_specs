@@ -9,3 +9,9 @@ Revisé con el usuario la aclaración sobre el flujo Geo Tools y actualicé `REA
 
 # 2025-11-06T13:57:03Z
 `TODO.md:9` – Revisé el contenido añadido al overview para asegurar coherencia con el inventario y retiré la mención al plan interno de actualización, dejando la narrativa como parte estable de la documentación pública. No quedan acciones pendientes asociadas a esta tarea; el siguiente trabajo relacionado continúa siendo la reestructuración de `geoparquet_specs.md` y `stac_specs.md`, ya planificada en las tareas 10-13 del TODO.
+
+# 2025-11-06T14:05:10Z
+`TODO.md:10` – Reescribí `geoparquet_specs.md` para separar un capítulo de fundamentos (motivación de GeoParquet, requisitos de cumplimiento y patrón de metadatos) de un nuevo bloque de perfiles por familia de datasets. Añadí subsecciones para las siete líneas de procesamiento listadas en `dataset_inventory.md`, indicando cómo cada una aplicará las reglas de GeoParquet y remarcando que `wind_interpolation` sigue siendo una rama independiente aunque use los mismos metadatos. El documento ahora sirve de andamiaje para que la siguiente tarea pueda volcar los esquemas y columnas específicos sin tener que volver a reorganizar la narrativa.
+
+# 2025-11-06T14:14:53Z
+`TODO.md:10` – Revisé el documento actualizado para eliminar restos de referencias internas (por ejemplo, menciones a `AGENTS.md`) y retiré el texto provisional que hablaba de “Subsequent editing tasks…”, dejando cada subsección descrita de forma estable. Confirmé que el nuevo esqueleto cubre los siete flujos requeridos y que el catálogo de interpolación sigue señalado como rama independiente. Dejé la tarea marcada como completada en `TODO.md`.
