@@ -21,3 +21,9 @@ Revisé con el usuario la aclaración sobre el flujo Geo Tools y actualicé `REA
 
 # 2025-11-06T15:41:00Z
 `TODO.md:11` – Revisé el documento completo tras los añadidos para asegurar consistencia con `dataset_inventory.md`, confirmé que todas las referencias a columnas, geometrías y metadatos CRS coinciden con los entregables vigentes y dejé el seguimiento de la rama de interpolación explicitado al final del capítulo. Con la validación terminada marqué la tarea como completada en `TODO.md`.
+
+# 2025-11-06T15:50:00Z
+`TODO.md:12` – Añadí a `stac_specs.md` el nuevo capítulo “Dataset-specific profiles”, que actúa como puente entre la explicación genérica de STAC y las particularidades de cada flujo externo. El capítulo introduce las siete subsecciones alineadas con el inventario (radial metrics, SAR, boyas, geo tools, wind inversion, wind resource e interpolación MeteoGalicia) y resume para cada una el tipo de catálogo, cómo se agrupan las Collections/Items y qué extensiones sostienen la trazabilidad. Dejé claro que las descripciones detalladas de assets, enlaces y sidecars se cubrirán en la siguiente tarea para mantener el foco de este paso en la estructura general.
+
+# 2025-11-06T15:05:14Z
+`TODO.md:12` – Verifiqué que el nuevo capítulo encaja con el resto del documento (tabla de contenidos, transición con la sección de ejemplos y el apartado de columnas) y actualicé `TODO.md` para dejar la tarea cerrada. No se requieren cambios adicionales en otros ficheros hasta completar la tarea 13, centrada en detallar assets y sidecars dentro del capítulo recién creado.

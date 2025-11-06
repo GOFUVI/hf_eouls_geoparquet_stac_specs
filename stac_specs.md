@@ -801,6 +801,38 @@ All three items share the same `datetime` timestamp and belong to the same Colle
 
 This example demonstrates how the STAC files are structured and interlinked for our HF-Radar radial metrics. In practice, a user starting at the root catalog can drill down to a station, pick a collection, then find items of interest by time. Once a particular Item (e.g., a radial metrics item) is found, its links lead to the associated header and range info items for complete context. Because we adhere to STAC and its extensions, the entire catalog can be loaded with standard libraries, enabling programmatic search and retrieval of HF-Radar data in the HF-EOLUS project.
 
+## Dataset-specific profiles
+
+The HF-EOLUS data lake now contains several independent workflows, each delivered as a STAC-compliant catalog on Zenodo. This chapter summarises the shape of every catalog so that readers can map Collections, Items, assets, and extensions before diving into the dataset-level documentation. Detailed schemas, asset manifests, and link graphs for these workflows will be expanded in the following update.
+
+### HF-Radar radial metrics ingestion
+
+The radial-metrics catalog serves as the authoritative root for the VILA and PRIO stations. A root catalog fans out into station catalogs, and each station exposes Collections that cover continuous acquisition periods. Every timestamp yields three Items—radial-metrics echoes, header metadata, and range diagnostics—that reuse the Table extension to describe their tabular layouts. Custom `hf_site:*` and `radial_metrics:*` properties capture station geolocation, antenna filters, and processing notes so downstream catalogs can reference a stable set of attributes.
+
+### Sentinel-1 SAR ingestion
+
+The SAR ingestion workflow publishes a single Collection that aggregates all Sentinel-1 OCN scenes ingested for HF-EOLUS. Daily Items line up with the GeoParquet partitions produced by the pipeline, each embedding the Table extension to advertise the OWI vector schema and the Processing extension to tie the assets back to the ESA products listed in the workflow DOI. The catalog remains flat (no station hierarchy) because SAR acquisitions already encode location in each Item’s geometry, and the daily cadence matches the `date` partitioning used in Athena.
+
+### Puertos del Estado buoy ingestion
+
+Buoy data are organized per station, with each Collection pointing to a single buoy (e.g., Vilano) and the time span covered by the ingest. Items represent hourly or daily snapshots exported from Puertos del Estado and contain one GeoParquet asset plus small metadata companions that preserve the original station diagnostics. These catalogs lean on the Table extension to publish the observation schema and on the Scientific extension to cite the PdE sources and calibration lineage that make the buoy archives traceable for validation workflows.
+
+### HF-EOLUS geo tools aggregation
+
+The aggregation toolkit produces Collections for each station and Bragg polarity so that grid-aligned products can be browsed independently of the raw echoes. Items reference aggregated GeoParquet shards keyed by `node_id` and carry `derived_from` links back to the radial-metrics catalog to keep provenance explicit. The catalogs attach the Table extension to expose the aggregated statistics per node, while custom properties explain how radar and SAR contributions coexist inside every partition even though the toolkit keeps them as separate assets.
+
+### HF-Radar wind inversion toolkit
+
+Wind-inversion deliverables are grouped by training campaign or inference release. Collections declare the ANN configuration (fold definitions, feature sets, and checkpoints) inside their summaries, and Items represent either pivot tables ready for training or inference products ready for publication. Each Item links to the aggregated catalog via `derived_from`, and the Table extension documents probabilities, diagnostics, and maintenance columns so analysts can evaluate model quality directly from metadata.
+
+### Wind resource toolkit
+
+The wind-resource catalog consumes the inference snapshots and republishes per-node resource estimates, Weibull fits, power-curve evaluations, and QA diagnostics. Collections correspond to assessment campaigns, while Items focus on the resulting GeoParquet tables and their manifest sidecars. The catalog maintains `derived_from` references to the wind-inversion Items, applies the Scientific extension to capture methodological caveats, and keeps the Table extension in place so resource planners can understand the schema without opening the binaries.
+
+### MeteoGalicia wind interpolation
+
+The interpolation branch operates as an autonomous catalog that mirrors the GeoParquet/STAC conventions of the main workflows but intentionally remains disconnected from the wind-resource chain. Collections are grouped by model configuration or delivery window, and Items correspond to hourly GeoParquet shards plus companion metadata outlining the interpolation method employed. Because no ANN or resource workflow links currently reference these assets, the catalog omits `derived_from` links to other HF-EOLUS branches while still exposing the Table and Scientific extensions needed for independent consumption.
+
 ## Column Definitions for Radial Metrics, Header, and Range Info Items
 
 All HF-Radar data assets are stored as tabular GeoParquet files, each with a defined schema of columns. The radial metrics dataset has a comprehensive set of possible columns (depending on processing; for instance, certain columns appear only if dual-solution processing is used). In practice, a given radial metrics file may contain only a subset of these columns, but it will always include essential fields like `rowid`, `timestamp`, `geometry`, and `pos_bragg` (the latter two are used as partition keys). The header and range info assets have fixed schemas that include all the columns listed for those item types. Below, we list and describe all columns for each item type:
