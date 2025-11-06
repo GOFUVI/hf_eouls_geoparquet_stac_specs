@@ -15,3 +15,9 @@ Revisé con el usuario la aclaración sobre el flujo Geo Tools y actualicé `REA
 
 # 2025-11-06T14:14:53Z
 `TODO.md:10` – Revisé el documento actualizado para eliminar restos de referencias internas (por ejemplo, menciones a `AGENTS.md`) y retiré el texto provisional que hablaba de “Subsequent editing tasks…”, dejando cada subsección descrita de forma estable. Confirmé que el nuevo esqueleto cubre los siete flujos requeridos y que el catálogo de interpolación sigue señalado como rama independiente. Dejé la tarea marcada como completada en `TODO.md`.
+
+# 2025-11-06T15:30:00Z
+`TODO.md:11` – Rellené todas las subsecciones del capítulo 2 de `geoparquet_specs.md` con la información del inventario: para cada flujo detallé qué ficheros GeoParquet se publican, cómo se estructuran las particiones, qué columnas soportan los filtros y qué metadatos `geo` (CRS84, `primary_column`, `edges`, `orientation`, `bbox`) se inyectan. Documenté explícitamente los tres conjuntos de ingestión LLUV (radial_metrics/header/rng_info), los day-partitions de Sentinel-1 con `rowid` determinista, los snapshots sin particiones de las boyas, las tablas agregadas por `node_id` del toolkit geo, los pivots/inferencias ANN, los snapshots del toolkit de recurso y los shards horarios de MeteoGalicia. La subsección 2.7 quedó rematada con la nota de independencia para el catálogo de interpolación, dejando claro que sigue un branch autónomo aunque cumpla GeoParquet 1.1.0.
+
+# 2025-11-06T15:41:00Z
+`TODO.md:11` – Revisé el documento completo tras los añadidos para asegurar consistencia con `dataset_inventory.md`, confirmé que todas las referencias a columnas, geometrías y metadatos CRS coinciden con los entregables vigentes y dejé el seguimiento de la rama de interpolación explicitado al final del capítulo. Con la validación terminada marqué la tarea como completada en `TODO.md`.

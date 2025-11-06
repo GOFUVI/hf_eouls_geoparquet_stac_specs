@@ -36,31 +36,85 @@ The following subsections align with the workflows enumerated in the dataset inv
 
 ### 2.1 HF-Radar radial metrics ingestion
 
-This workflow converts CODAR LLUV spectra into partitioned GeoParquet archives (`radial_metrics`, `header`, `rng_info`). The data is split by station, Bragg polarity, and acquisition timestamp, and every shard stores CRS84 point or multiline geometries so ingestion metadata can be joined spatially downstream. The subsection will capture how the per-asset schemas, geometry types, and `geo` metadata blocks keep the positive and negative Bragg peaks aligned with the STAC catalog for `VILA` and `PRIO`.
+HF-radar radial metrics are rewritten from CODAR LLUV spectra into three GeoParquet families that always declare GeoParquet v1.1.0 metadata and WKB encodings:
+
+- `radial_metrics/pos_bragg={positive|negative}/timestamp=<ISO8601>/radial_metrics.parquet` holds every MUSIC echo with point geometries derived from `LOND/LATD`. The schema keeps the original LLUV columns (`Pwr`, `VELO`, `RNGE`, `BEAR`, quality flags) plus a derived `geometry` column exposed as the primary geometry.
+- `header/.../header.parquet` stores the key/value metadata rows for each acquisition window. Every row inherits the site location as a CRS84 point so header provenance can be filtered spatially.
+- `rng_info/.../rng_info.parquet` aggregates range-bin diagnostics (`SPRC`, `RNGC`, `NVAC`, `ALM1`–`ALM4`) and represents each arc as a `range_geometry` MultiLineString to capture the great-circle footprint of the ring being summarised.
+
+**Geometry and CRS.** All three families embed `columns.<name>.crs` entries pointing to OGC:CRS84. `radial_metrics` and `header` set `primary_column=geometry` and restrict `geometry_types` to `Point`. `rng_info` switches `primary_column` to `range_geometry`, declares `geometry_types=["MultiLineString"]`, and populates `columns.range_geometry.edges="spherical"` so readers know the arcs follow geodesics. Bounding boxes are recorded at the shard level to accelerate metadata-driven filtering.
+
+**Partitioning and metadata.** Folder keys follow `pos_bragg=<0|1>/timestamp=<ISO8601 slot>` (with RFC 3339 timestamps URL-encoded) so Athena and DuckDB can prune shards without scanning Parquet footers. The `pos_bragg` column is stored as a tinyint flag inside every file to keep partition provenance within the schema. Each shard reiterates the GeoParquet version (`"1.1.0"`) and retains Glue statistics so scans remain predicate-pushdown friendly.
+
+**Schema highlights.** `timestamp` remains the temporal spine of all tables and is mirrored in STAC `datetime`. Echo tables expose the entire LLUV payload together with derived coordinates; header tables reduce to `metakey`, `metavalue`, `site_code`, `timestamp`, and `geometry`; `rng_info` concentrates on MUSIC-derived aggregates and includes the great-circle geometry. These consistent schemas allow downstream aggregations, QA dashboards, and STAC catalogs to reason about both positive and negative Bragg peaks without custom adapters.
 
 ### 2.2 Sentinel-1 SAR ingestion
 
-Daily GeoParquet partitions list every OWI vector captured by the Sentinel-1 OCN products. Each file contains CRS84 point geometries combined with deterministic `rowid` identifiers and inherits polygon-orientation metadata for the optional footprint geometries. Here we describe how the SAR workflow encodes its per-day partition folders, lineage sidecars, and Table-extension compatible `geo` metadata so the aggregates can be consumed by DuckDB, Athena, and the ANN training stack.
+The Sentinel-1 workflow produces one GeoParquet shard per observation day under `assets/date=YYYY-MM-DD/YYYY-MM-DD.parquet`, complemented by auxiliary JSON/DDLs that capture lineage and column typing.
+
+**Geometry and CRS.** Each shard declares `primary_column=geometry`, with `geometry_types=["Point"]`, `encoding="WKB"`, and `crs` pointing to CRS84. Optional polygon footprints, when exported, reuse the same metadata block but add `orientation="counterclockwise"` and `edges="spherical"` so swath analyses retain directional context. Longitude and latitude columns stay in the schema for compatibility with analytics engines that prefer scalar coordinates.
+
+**Partitioning and metadata.** The `date` Hive partition is materialised both in the folder path and as a STRING column to accelerate Athena repairs. `firstMeasurementTime` and `lastMeasurementTime` are persisted verbatim as TIMESTAMP(UTC) columns and echoed into the STAC items’ temporal extent. The `geo` metadata advertises the bounding box of each day, while `lineage.json` is transformed into `processing:lineage` strings but does not modify the GeoParquet payload.
+
+**Schema highlights.** The core OWI measurements (`owiWindSpeed`, `owiWindDirection`, `owiMask`, `owiHeading`, `owiRadVel`, `owiWindQuality`, `owiInversionQuality`) remain DOUBLE/INT columns following the CTAS typing captured in `columns.sql`. `rowid` is a deterministic BIGINT hash used as a foreign key by the aggregation toolkit. Every file keeps ESA quality bits untouched so downstream consumers can filter by reliability without revisiting the SAFE products.
 
 ### 2.3 Puertos del Estado buoy ingestion
 
-Buoy deliverables consolidate entire station chronologies into single GeoParquet snapshots per buoy, each with a fixed CRS84 point geometry. The absence of directory partitions is intentional to keep every buoy asset a self-contained time series; schema consistency is documented through the file-level `geo` block and the Table metadata broadcast through STAC. This section outlines how the ingestion pipeline rewrites the Athena CTAS outputs, applies GeoParquet metadata, and exposes the assets downstream.
+Puertos del Estado time series are flattened into one GeoParquet snapshot per buoy (e.g., `assets/VILANO.parquet`). There are no directory partitions: each file is a self-contained chronology that STAC references directly.
+
+**Geometry and CRS.** Every record carries a `geometry` column with the fixed buoy location encoded as a CRS84 point. The `geo` metadata therefore lists a single bounding box per file, `geometry_types=["Point"]`, and `primary_column=geometry`. Because the buoy coordinates never change, these values double as spatial provenance for the entire history.
+
+**Schema highlights.** The schema keeps `timestamp` (TIMESTAMP UTC), `wind_speed` (DOUBLE), `wind_dir` (INT), maintenance quality flags when available, and derived aggregates used by ANN validation. Nullability mirrors the original PdE CSV conventions so missing/calm samples propagate cleanly. Athena CTAS SQL captured alongside the delivery guarantees that downstream re-ingestion can recreate the same typing.
+
+**Metadata considerations.** Rewriting everything into single files allows the `geo` block to remain stable across releases, while `table:row_count` and `table:columns` in the STAC Table extension expose the schema to catalog clients. Citation metadata lives in STAC, so the GeoParquet files focus on CRS declarations and bounding boxes only.
 
 ### 2.4 HF-EOLUS geospatial aggregation toolkit
 
-The aggregation toolkit emits GeoParquet tables per station and Bragg polarity after snapping raw echoes to the analysis grid, plus consolidated SAR aggregates mapped onto the same mesh. It also stores node-definition tables and join artifacts. All of these tables share CRS84 point geometries keyed by `node_id`, while the HF range statistics inject partition keys for Bragg polarity. This subsection documents how the toolkit maintains GeoParquet compliance across the aggregated outputs that feed ANN preparation.
+The aggregation toolkit emits several GeoParquet assets keyed by station and grid node:
+
+- `vila_aggregated/pos_bragg={0|1}/0.parquet` and `prio_aggregated/...` contain half-hour summaries of HF echoes projected onto analysis nodes.
+- `sar_aggregated/data.parquet` stores Sentinel-1-derived aggregates on the same mesh.
+- `grid_nodes_*.parquet` alongside `geo_join_output*.parquet` capture the node definitions and the lookup between raw echoes and grid nodes.
+
+**Geometry and CRS.** Aggregated tables always expose the node centroid as `geometry` (WKB Point, CRS84) and mark it as the primary geometry. Range diagnostics that rely on arcs reuse the same approach as the ingestion workflow by embedding `edges="spherical"`. Grid definition tables add auxiliary planar coordinates when required but keep `geometry` as the canonical spatial column.
+
+**Partitioning and metadata.** HF aggregates stay partitioned by `pos_bragg={0|1}` so consumers can load positive and negative peaks independently. Each shard records the `node_id` domain, timestamp range, and bounding box inside the `geo` metadata so ANN pipelines can preflight extents without scanning the rows. SAR aggregates are single files with the same metadata layout, while node definition tables omit temporal fields because they are static assets.
+
+**Schema highlights.** Common keys across all tables are `timestamp`, `node_id`, `pos_bragg` (when applicable), and `geometry`. HF-specific columns include the `n`, `pwr_*`, and `velo_*` statistic families plus distance/bearing descriptors required downstream. SAR aggregates contribute `owiwindspeed_*`, `owiwinddirection_*`, and sample-count columns. The join artifacts keep `echo_id`, `node_id`, and quality flags so analysts can trace every aggregate back to its raw echoes.
 
 ### 2.5 HF-Radar wind inversion toolkit
 
-Pivoted datasets, ANN-ready folds, and inference corpora are stored as flat GeoParquet files where spatial context (node geometries, station bearings, maintenance metadata) is preserved alongside model targets and predictions. Even though these assets live in different catalog branches (baseline, grid-offset, SAR-only experiments), they inherit the same GeoParquet metadata template so metrics can be compared across experiments. The subsection highlights how the toolkit encodes geometry fields, fold metadata, and partition hashes while keeping the files compatible with Table-extension aware clients.
+The wind inversion toolkit republishes the aggregated datasets as ANN-ready GeoParquet tables and captures every inference corpus inside the same standard metadata frame.
+
+**Data families.** `catalogs/data_preparation_pipeline/` stores the pivoted HF/SAR/buoy datasets; `catalogs/*_pipeline/assets/data.parquet` bundles the trained-model inputs per experiment (baseline, KD, SAR-only, grid-offset); `catalogs/*_inference/assets/data.parquet` keeps the prediction outputs for each fold or station.
+
+**Geometry and CRS.** Each file retains the grid `geometry` column from the aggregation toolkit, declared as a CRS84 point and marked as the primary geometry. Additional geometry columns (e.g., buffered footprints) are rare; when present they inherit the same CRS declaration. Bounding boxes reflect the union of all nodes covered by the file so inference consumers can preflight spatial coverage.
+
+**Schema highlights.** Columns fall into four groups: (1) deterministic identifiers (`timestamp`, `node_id`, `fold_id`, `partition_label`), (2) aggregated HF/SAR features (`vila_aggregated__*`, `prio_aggregated__*`, SAR statistical families), (3) reference data (`pde_vilano_*`, maintenance intervals, site bearings), and (4) model outputs (`pred_wind_speed`, `pred_cos_wind_dir`, `prob_range_*`, confidence gates). Every table keeps explicit dtypes (DOUBLE for continuous metrics, INT/BIGINT for counters) and relies on the GeoParquet metadata to preserve CRS context for the node geometry.
+
+**Metadata considerations.** Because the ANN corpora are stored as single shards per experiment, the `geo` block’s `bbox` and `row_count` give consumers enough information to detect station-specific subsets without reading all data. The absence of directory partitions keeps fold assignment inside the schema, simplifying reproducibility.
 
 ### 2.6 Wind resource toolkit
 
-Resource deliverables package the ANN inference corpus and the derived power summaries into two GeoParquet snapshots. Both tables expose CRS84 point geometries and embed the provenance metadata that ties every record back to the ANN partitions and corresponding manifest files. This part of the document will describe how the toolkit serialises Kaplan–Meier outputs, Weibull parameters, and QA flags without violating the GeoParquet rules governing geometry placement and CRS declarations.
+The resource toolkit exposes two public GeoParquet snapshots: the ANN inference corpus replicated from the wind-inversion repository and the derived power estimates.
+
+**Geometry and CRS.** Both tables preserve the CRS84 point geometry per node and declare it as `primary_column=geometry`. The inference snapshot mirrors the metadata emitted by the ANN pipeline, while `power_estimates_nodes.parquet` recomputes the bounding box after summarising nodes so spatial tools can trim the dataset quickly.
+
+**Schema highlights.** The inference file repeats every predictor from the ANN stage plus the prediction columns and QA flags (`pred_*`, `prob_range_*`, `range_flag`, `range_flag_confident`). The power estimates table introduces summarised metrics such as `method`, `power_density_w_m2`, `turbine_mean_power_kw`, `capacity_factor`, Kaplan–Meier (`km_shape`, `km_scale`) and Weibull (`weibull_k`, `weibull_lambda`) parameters, bootstrap spreads, empirical QA ratios, and Boolean quality gates. Companion `manifest.json` assets track checksums and `hf_eolus:code_commit` identifiers, but the GeoParquet file itself remains self-describing thanks to the `geo` block.
+
+**Partitioning and metadata.** Public deliveries are single files on purpose so each version tag (e.g., `hf_eolus:version=sar-range-final-20251018`) maps to an immutable asset. Since the datasets can exceed one million rows, `row_group_size` is tuned to keep DuckDB and Athena efficient while still enabling columnar pruning. Bounding boxes and row counts are always set, ensuring catalog clients can estimate footprint and cost before reading the binaries.
 
 ### 2.7 MeteoGalicia wind interpolation (standalone branch)
 
-The interpolation workflow produces hourly GeoParquet partitions (`year=/month=/day=/hour=/`) containing MeteoGalicia-derived node values plus diagnostic metadata. Each partition carries CRS84 point geometries, interpolation quality metrics, and references to the MeteoGalicia source model. Unlike the other workflows, this branch remains independent: its GeoParquet archives feed analyses within the interpolation toolkit only, and no `derived_from` links connect them to the ANN or wind-resource assets yet. This subsection captures that independence so readers understand that, while the files honour the same GeoParquet conventions, their catalogue stands apart until formal integration occurs.
+The MeteoGalicia interpolation workflow remains an independent branch that mirrors HF-EOLUS conventions while keeping its catalog separate from the ANN and wind-resource lines.
+
+**Partitioning and assets.** Hourly GeoParquet shards live under `year=/month=/day=/hour=/data.parquet`, each accompanied by JSON sidecars (`metadata.json`) and diagnostic PNGs. Additional collections ship the PdE buoy references used for validation, but none of these assets are linked via `derived_from` to the ANN or resource catalogs yet.
+
+**Geometry and CRS.** Every shard stores node centroids in a `geometry` column tagged as CRS84 plus auxiliary planar coordinates (`x_local`, `y_local`) to encode the MeteoGalicia grid reference frame. The GeoParquet metadata lists `geometry_types=["Point"]`, and when great-circle segments are stored (e.g., interpolation footprints) they inherit the `edges="spherical"` flag.
+
+**Schema highlights.** Mandatory columns include `timestamp`, `node_id`, `x_local`, `y_local`, `is_orig`, `source_model`, `interpolation_source`, the interpolated components (`u`, `v`, `wind_speed`, `wind_direction`, `u_rkt`, `v_rkt`), and diagnostics such as `kriging_var_u/v`, `nearest_distance_km`, `neighbors_used`, and the cross-validation/test statistics. These values are echoed in the per-hour metadata JSON but the GeoParquet schema remains the authoritative source.
+
+**Independence notice.** Although the files comply with GeoParquet v1.1.0 and the Table extension like the rest of the project, their STAC catalog is intentionally standalone. Consumers must treat its versioning and DOI lineage independently until the interpolation outputs are formally wired into the ANN or wind-resource workflows.
 
 ## References
 
