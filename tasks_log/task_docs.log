@@ -1,0 +1,6 @@
+# 2025-11-05T21:17:11Z
+Actualicé `README.md` con la nueva sección "Processing Lines", describiendo las siete líneas de procesamiento y enlazando cada una con sus DOIs de flujo y dataset según `AGENTS.md` y `dataset_inventory.md`. Añadí la sección monográfica detrás del overview, destaqué el rol de cada flujo en la cadena de HF-EOLUS y remarqué que `wind_interpolation` sigue siendo una rama independiente sin DOI público todavía. También amplié la tabla de contenidos para incluir el nuevo bloque, manteniendo alineados los anclajes internos del documento.
+
+# 2025-11-06T08:46:53Z
+Revisé con el usuario la aclaración sobre el flujo Geo Tools y actualicé `README.md` para eliminar los identificadores entre paréntesis en la sección "Processing Lines" y matizar que el toolkit genera agregados HF y SAR en paralelo, sin implicar un join automático entre ambos. Confirmé que el resto de la sección sigue alineada con `dataset_inventory.md` y dejé la tarea cerrada en `TODO.md`.
+
