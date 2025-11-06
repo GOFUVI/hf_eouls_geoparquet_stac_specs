@@ -43,6 +43,24 @@ STAC provides a lightweight framework for publishing geospatial metadata. For de
 
 When storing Radial Metrics, each STAC Item represents measurements derived from one spectra file recorded by a HF-Radar station at a specific timestamp and links to two GeoParquet assets: one for the Radial Metrics derived from positive Bragg peak and one for the negative peak. Collections group Items by station and antenna pattern, enabling organized discovery. 
 
+## End-to-end dataflow
+
+The HF-EOLUS documentation maintains a living [dataset inventory](dataset_inventory.md) that records every GeoParquet deliverable, partition scheme, and STAC extension in use across the external workflows. The overview below contextualizes how those datasets connect across the production chain so readers can trace each downstream output back to its upstream assets.
+
+### Main ingestion → aggregation → ANN/resource loop
+
+1. **Radial metrics ingestion workflow** converts CODAR LLUV spectra into partitioned GeoParquet tables (`radial_metrics`, `header`, `rng_info`) and publishes the authoritative STAC catalog for the VILA and PRIO stations. The ingestion metadata captured in the inventory clarifies how timestamps, Bragg polarity, and header diagnostics remain synchronized across assets.
+2. **Sentinel-1 SAR and Puertos del Estado buoy workflows** provide external supervision for later stages. Their GeoParquet shards keep deterministic identifiers (`rowid`, buoy station codes) and dedicated STAC extensions (Table, Scientific, Processing) so that aggregation jobs can join them with radar echoes by space and time.
+3. **Geospatial aggregation toolkit** aligns echo-level measurements to the analysis grid used by the wind-inversion models. The resulting GeoParquet files (per-station, per-Bragg polarity, plus a consolidated SAR aggregate) are described in the inventory together with their `node_id` partitions and CRS settings, ensuring they can be cross-referenced with both the ingestion outputs and the ANN-ready tables.
+4. **ANN training and inference toolkit** blends the aggregated HF-radar, SAR, and buoy datasets into pivot tables, encodes fold assignments, and emits inference snapshots. Dataset inventory entries explain how columns such as `crc32_partition_key`, `fold`, probabilistic range scores, and maintenance diagnostics are preserved via the Table extension so that downstream resource assessments understand each prediction’s provenance.
+5. **Wind-resource estimation toolkit** ingests the ANN inference corpus to compute power-density summaries, Weibull parameters, Kaplan–Meier survival statistics, and QA diagnostics per HF node. Its catalog advertises the `derived_from` links back to the ANN deliverables, while the inventory lists the manifest sidecars and quality flags that document how every resource estimate maps to the training artifacts.
+
+ Together, these stages capture the primary ingestion → aggregation → ANN/resource flow: every downstream file references its parent assets via STAC links, and every schema reference resolves to the dataset inventory for reproducible partitioning and column semantics.
+
+### Parallel MeteoGalicia interpolation branch
+
+The MeteoGalicia interpolation workflow operates as an independent branch that synchronizes model outputs, performs kriging or nearest-neighbor interpolation on dense grids, and repackages the results into its own STAC hierarchy (data, metadata JSON, and diagnostic plots). Its GeoParquet shards partition by year/month/day/hour and annotate each record with `source_model`, interpolation quality metrics, and node descriptors so the catalog can stand alone. As noted in the dataset inventory, these assets are currently distributed separately from the ANN/resource chain: no STAC `derived_from` links connect the interpolation catalog to the ANN or wind-resource toolkits, and validation steps rely on colocated PdE buoy archives instead. Documenting this branch alongside the main loop makes it clear that the interpolation outputs follow the same GeoParquet/STAC conventions yet remain decoupled until the project formally integrates them into the wind-resource assessments.
+
 
 ## References
 
@@ -50,4 +68,3 @@ When storing Radial Metrics, each STAC Item represents measurements derived from
 <li id="ref1">GeoParquet. https://geoparquet.org</li>
 <li id="ref2">STAC Contributors. (2024). SpatioTemporal Asset Catalog (STAC) specification (Version 1.1.0). https://stacspec.org</li>
 <li id="ref3">LLUV File Format. http://support.codar.com/Technicians_Information_Page_for_SeaSondes/Manuals_Documentation_Release_8/File_Formats/File_LLUV.pdf
-
