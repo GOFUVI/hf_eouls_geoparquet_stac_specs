@@ -6,11 +6,45 @@ This repository documents how the HF-EOLUS project stores high-frequency radar r
 
 ## Table of Contents
 - [Overview](#overview)
+- [Processing Lines](#processing-lines)
 - [GeoParquet Specification](#geoparquet-specification)
 - [STAC Specification](#stac-specification)
 
 ## Overview
 HF-EOLUS processes large volumes of HF-Radar observations and meteorological model outputs. GeoParquet provides a compact, analysis-ready storage format while STAC supplies standardized metadata so catalogs remain portable and easy to browse. The [overview](overview.md) explains the motivation and how these pieces fit together.
+
+## Processing Lines
+HF-EOLUS organizes its deliverables into seven processing lines that share the same GeoParquet and STAC conventions while remaining individually citable through Zenodo DOIs. The summaries below connect each workflow to its role in the project and reference both the workflow documentation DOI and the DOI of the public dataset or catalog whenever available.
+
+### HF-Radar Radial Metrics Ingestion
+Workflow DOI: [10.5281/zenodo.17096796](https://doi.org/10.5281/zenodo.17096796) · Dataset DOI: [10.5281/zenodo.16892223](https://doi.org/10.5281/zenodo.16892223)  
+This pipeline ingests CODAR SeaSonde LLUV spectra, extracts the radial metrics for the positive and negative Bragg peaks, and rewrites every echo, header, and range diagnostic into partitioned GeoParquet shards with embedded GeoParquet `geo` metadata. Its STAC catalog exposes the per-station hierarchy (`VILA`, `PRIO`) that the rest of HF-EOLUS references, making it the authoritative source for point-level observations used in all downstream analytics.
+
+### Sentinel-1 SAR Ingestion
+Workflow DOI: [10.5281/zenodo.17096926](https://doi.org/10.5281/zenodo.17096926) · Dataset DOI: [10.5281/zenodo.17100125](https://doi.org/10.5281/zenodo.17100125)  
+This line processes Sentinel-1 OCN products into daily GeoParquet partitions where every OWI vector is spatialized as a CRS84 point and documented through the STAC Table and Processing extensions. The SAR wind fields complement HF-Radar measurements during aggregation and model training, so their schema and lineage metadata are kept compatible with Athena/DuckDB queries as well as with the STAC collections consumed by the ANN and wind-resource pipelines.
+
+### Puertos del Estado Buoy Ingestion
+Workflow DOI: [10.5281/zenodo.17097949](https://doi.org/10.5281/zenodo.17097949) · Dataset DOI: [10.5281/zenodo.17098038](https://doi.org/10.5281/zenodo.17098038)  
+The buoy ingestion workflow consolidates hourly in-situ records from Puertos del Estado into GeoParquet snapshots per buoy (e.g., Vilano) and republishes them via STAC Items that include Scientific Extension metadata. These assets provide the calibrated reference winds that the aggregation toolkit and the ANN validation steps use to benchmark radar- and SAR-derived winds, ensuring the HF-EOLUS documentation remains traceable back to official PdE observations.
+
+### HF-EOLUS Geo Tools
+Workflow DOI: [10.5281/zenodo.17104924](https://doi.org/10.5281/zenodo.17104924) · Dataset DOI: [10.5281/zenodo.17115413](https://doi.org/10.5281/zenodo.17115413)  
+This toolkit aligns the per-echo HF-Radar tables with the fixed analysis grid, aggregates velocity and power statistics per `node_id`, and produces a parallel set of SAR aggregates over the same mesh so downstream workflows can combine them explicitly when needed. The resulting GeoParquet derivatives (one shard per station/Bragg polarity plus a consolidated SAR aggregate) fuel every ANN-ready dataset. Its STAC catalogs maintain station-specific namespaces (`hf_site:*`) and Table extension payloads so consumers can inspect schema metadata without reading the binaries.
+
+### HF-Radar Wind Inversion Toolkit
+Workflow DOI: [10.5281/zenodo.17464519](https://doi.org/10.5281/zenodo.17464519) · Dataset DOI: [10.5281/zenodo.17464583](https://doi.org/10.5281/zenodo.17464583)  
+HF-wind-inversion pivots the aggregated datasets into ANN-ready tables, encodes cross-validation folds, and publishes inference snapshots for multiple training regimes (baseline, fine-tuned, KD, buoy-referenced, grid-offset). Every deliverable remains a single GeoParquet asset with exhaustive Table extension metadata so predictions, probabilistic scores, and maintenance diagnostics can be queried alongside their provenance. These outputs are the direct inputs for the wind-resource assessment toolkit described below.
+
+### Wind Resource Toolkit
+Workflow DOI: pending publication · Dataset DOI: pending publication  
+The wind-resource line operates on the ANN inference corpus to compute per-node resource summaries, Weibull/empirical distributions, power-curve statistics, and QA diagnostics. Even though the Zenodo DOIs are still pending, the catalog already republishes pivot joins and the final `power_estimates_nodes.parquet` snapshot with manifest sidecars so every estimate can be tied back to the ANN build and to the GeoParquet evidence chain documented across the previous workflows.
+
+### MeteoGalicia Wind Interpolation
+Workflow DOI: pending publication · Dataset DOI: pending publication  
+This branch synchronizes MeteoGalicia model outputs, performs kriging/nearest-neighbor interpolation on dense grids, and exposes the hourly GeoParquet shards together with metadata JSON files and diagnostic plots in its own STAC catalog tree. It intentionally remains a standalone branch that does not feed the HF-Radar wind-resource chain yet; nevertheless, it adheres to the same GeoParquet/STAC conventions so it can be integrated once the MeteoGalicia deliverables receive their DOIs and downstream consumers are ready to ingest the interpolated winds.
+
+Cross-document validation of these seven workflows is summarised in the [Cross-Document Validation Checklist](docs/cross_document_validation_checklist.md), which lists the exact sections across README, overview, GeoParquet specs, and STAC specs that describe each processing line.
 
 ## GeoParquet Specification
 The [GeoParquet specification](geoparquet_specs.md) details how geometry columns, coordinate reference systems, and file-level metadata are encoded. It follows GeoParquet v1.1.0, including optional fields like polygon orientation and edge type to ensure interoperability across tools.

@@ -1,0 +1,41 @@
+# 2025-11-05T21:17:11Z
+Actualicé `README.md` con la nueva sección "Processing Lines", describiendo las siete líneas de procesamiento y enlazando cada una con sus DOIs de flujo y dataset según `AGENTS.md` y `dataset_inventory.md`. Añadí la sección monográfica detrás del overview, destaqué el rol de cada flujo en la cadena de HF-EOLUS y remarqué que `wind_interpolation` sigue siendo una rama independiente sin DOI público todavía. También amplié la tabla de contenidos para incluir el nuevo bloque, manteniendo alineados los anclajes internos del documento.
+
+# 2025-11-06T08:46:53Z
+Revisé con el usuario la aclaración sobre el flujo Geo Tools y actualicé `README.md` para eliminar los identificadores entre paréntesis en la sección "Processing Lines" y matizar que el toolkit genera agregados HF y SAR en paralelo, sin implicar un join automático entre ambos. Confirmé que el resto de la sección sigue alineada con `dataset_inventory.md` y dejé la tarea cerrada en `TODO.md`.
+
+# 2025-11-06T13:46:22Z
+`TODO.md:9` – Amplié `overview.md` con un capítulo “End-to-end dataflow” para narrar la cadena ingestión → agregación → ANN/recurso a partir de las evidencias registradas en `dataset_inventory.md`. Documenté paso a paso cómo los productos GeoParquet de `hf_radial_metrics_aws_ingestion`, `hf_eolus_sar_ingestion`, `hf_eolus_pde_buoy_ingestion`, `hf_eolus_geo_tools`, `hf-wind-inversion` y `wind_resource` se relacionan mediante STAC y cómo los inventarios describen sus particiones, identificadores y extensiones. Añadí una subsección dedicada a la rama `wind_interpolation`, enfatizando que su catálogo STAC y sus particiones siguen las mismas convenciones pero permanecen desacoplados del flujo ANN/recurso hasta que se formalice la integración. Dejé explícito que el inventario es la fuente de verdad para rastrear columnas y particiones en todas las etapas.
+
+# 2025-11-06T13:57:03Z
+`TODO.md:9` – Revisé el contenido añadido al overview para asegurar coherencia con el inventario y retiré la mención al plan interno de actualización, dejando la narrativa como parte estable de la documentación pública. No quedan acciones pendientes asociadas a esta tarea; el siguiente trabajo relacionado continúa siendo la reestructuración de `geoparquet_specs.md` y `stac_specs.md`, ya planificada en las tareas 10-13 del TODO.
+
+# 2025-11-06T14:05:10Z
+`TODO.md:10` – Reescribí `geoparquet_specs.md` para separar un capítulo de fundamentos (motivación de GeoParquet, requisitos de cumplimiento y patrón de metadatos) de un nuevo bloque de perfiles por familia de datasets. Añadí subsecciones para las siete líneas de procesamiento listadas en `dataset_inventory.md`, indicando cómo cada una aplicará las reglas de GeoParquet y remarcando que `wind_interpolation` sigue siendo una rama independiente aunque use los mismos metadatos. El documento ahora sirve de andamiaje para que la siguiente tarea pueda volcar los esquemas y columnas específicos sin tener que volver a reorganizar la narrativa.
+
+# 2025-11-06T14:14:53Z
+`TODO.md:10` – Revisé el documento actualizado para eliminar restos de referencias internas (por ejemplo, menciones a `AGENTS.md`) y retiré el texto provisional que hablaba de “Subsequent editing tasks…”, dejando cada subsección descrita de forma estable. Confirmé que el nuevo esqueleto cubre los siete flujos requeridos y que el catálogo de interpolación sigue señalado como rama independiente. Dejé la tarea marcada como completada en `TODO.md`.
+
+# 2025-11-06T15:30:00Z
+`TODO.md:11` – Rellené todas las subsecciones del capítulo 2 de `geoparquet_specs.md` con la información del inventario: para cada flujo detallé qué ficheros GeoParquet se publican, cómo se estructuran las particiones, qué columnas soportan los filtros y qué metadatos `geo` (CRS84, `primary_column`, `edges`, `orientation`, `bbox`) se inyectan. Documenté explícitamente los tres conjuntos de ingestión LLUV (radial_metrics/header/rng_info), los day-partitions de Sentinel-1 con `rowid` determinista, los snapshots sin particiones de las boyas, las tablas agregadas por `node_id` del toolkit geo, los pivots/inferencias ANN, los snapshots del toolkit de recurso y los shards horarios de MeteoGalicia. La subsección 2.7 quedó rematada con la nota de independencia para el catálogo de interpolación, dejando claro que sigue un branch autónomo aunque cumpla GeoParquet 1.1.0.
+
+# 2025-11-06T15:41:00Z
+`TODO.md:11` – Revisé el documento completo tras los añadidos para asegurar consistencia con `dataset_inventory.md`, confirmé que todas las referencias a columnas, geometrías y metadatos CRS coinciden con los entregables vigentes y dejé el seguimiento de la rama de interpolación explicitado al final del capítulo. Con la validación terminada marqué la tarea como completada en `TODO.md`.
+
+# 2025-11-06T15:50:00Z
+`TODO.md:12` – Añadí a `stac_specs.md` el nuevo capítulo “Dataset-specific profiles”, que actúa como puente entre la explicación genérica de STAC y las particularidades de cada flujo externo. El capítulo introduce las siete subsecciones alineadas con el inventario (radial metrics, SAR, boyas, geo tools, wind inversion, wind resource e interpolación MeteoGalicia) y resume para cada una el tipo de catálogo, cómo se agrupan las Collections/Items y qué extensiones sostienen la trazabilidad. Dejé claro que las descripciones detalladas de assets, enlaces y sidecars se cubrirán en la siguiente tarea para mantener el foco de este paso en la estructura general.
+
+# 2025-11-06T15:05:14Z
+`TODO.md:12` – Verifiqué que el nuevo capítulo encaja con el resto del documento (tabla de contenidos, transición con la sección de ejemplos y el apartado de columnas) y actualicé `TODO.md` para dejar la tarea cerrada. No se requieren cambios adicionales en otros ficheros hasta completar la tarea 13, centrada en detallar assets y sidecars dentro del capítulo recién creado.
+
+# 2025-11-06T16:30:00Z
+`TODO.md:13` – Desarrollé cada subsección del capítulo “Dataset-specific profiles” en `stac_specs.md` con los datos del inventario: detallé la jerarquía de catálogos, Collections e Items por flujo, enumeré los assets publicados (GeoParquet, sidecars JSON/SQL, manifests) y los `roles`/`rel` que conectan Items relacionados, y documenté las extensiones STAC activas (Table, Processing, Scientific) junto a las notas de trazabilidad. Destaqué la independencia del catálogo de MeteoGalicia y cómo los enlazados `derived_from` encadenan ingestión → agregación → ANN → recurso. Dejé la tarea en revisión actualizando `TODO.md`.
+
+# 2025-11-06T17:24:24Z
+`TODO.md:13` – Finalicé la documentación del capítulo de perfiles STAC contrastando cada catálogo real (radial metrics, SAR, boyas, geo tools, wind inversion, wind resource e interpolación) con sus carpetas: corregí la descripción de assets (p.ej. sentinel-1 sin sidecars, boyas solo con el Parquet), los enlaces reales (`describedby`, ausencia de `derived_from` en geo tools/inversion) y la separación de catálogos hermanos en MeteoGalicia. Dejó alineados `stac_specs.md`, `dataset_inventory.md` y `geoparquet_specs.md` con la estructura verificada.
+
+# 2025-11-06T17:45:48Z
+`TODO.md:16` – Redacté `docs/cross_document_validation_checklist.md` con la tabla exigida en documentation_update_plan.md §4, enlazando por flujo las secciones concretas de README/overview, `geoparquet_specs.md` y `stac_specs.md`, y resaltando que la rama de MeteoGalicia sigue siendo independiente. Añadí un párrafo en `README.md` (tras la subsección de MeteoGalicia) que remite al checklist para que los lectores lo encuentren en el flujo principal y marqué la tarea como `pending_review` en `TODO.md`.
+
+# 2025-11-07T05:55:09Z
+`TODO.md:16` – Validé el checklist recién creado y confirmé que README, overview y las especificaciones ya reflejan el mismo contenido, por lo que no fueron necesarios cambios adicionales. Marqué la tarea como completada en `TODO.md`, cerrando el bloque de documentación pendiente del plan.

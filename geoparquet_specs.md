@@ -1,128 +1,122 @@
 # GeoParquet v1.1.0 Specification
 
-This section summarizes the GeoParquet v1.1.0 standard and provides an example of the `geo` metadata property as embedded in our GeoParquet files, together with a discussion of how it fulfills required fields and which optional extensions are included. Please refer to  [\[1\]](#ref1) for the full set of specifications.
+This document outlines how HF-EOLUS applies the GeoParquet v1.1.0 standard across every workflow listed in the dataset inventory. It starts by summarising the mandatory requirements of the specification and then records, per dataset family, how those rules are implemented in practice so readers can navigate the deliverables with a consistent mental model.
 
-## Introduction to GeoParquet v1.1.0
+## 1. GeoParquet fundamentals
 
-**GeoParquet v1.1.0** [\[1\]](#ref1) is an Open Geospatial Consortium (OGC) specification that extends **Apache Parquet** (a columnar storage format) to handle geospatial vector data. It defines how to embed geometric data and coordinate reference information within a Parquet file's schema and metadata so that any compliant software can interpret the spatial content. Key aspects of the GeoParquet standard include:
+### 1.1 Why GeoParquet for HF-EOLUS
 
--   **Geometry Column Encoding**: Geometry data (points, lines polygons, etc.) are stored in a binary form (often Well-Known Binary - WKB) or in optimized encodings defined by **GeoArrow**. All geometry columns must reside at the top level of the table schema (not nested in structs/arrays), and each geometry column is either required (one geometry per row) or optional (zero or one geometry per row) but never repeated.
+HF-EOLUS handles millions of radar echoes, SAR wind vectors, buoy observations, aggregated grid nodes, and ANN inference rows. GeoParquet combines Apache Parquet’s columnar compression with an interoperable geospatial metadata model, allowing the project to store these high-volume assets efficiently, query them with cloud SQL engines, and move between Python, R, Spark, and DuckDB without bespoke import routines. Because the geometry payloads live alongside the numeric attributes, downstream teams can join spatial and temporal keys without reprojecting or reformatting the source files.
 
--   **CRS Specification**: A GeoParquet file records the Coordinate Reference System for geometries. The CRS is stored in the metadata as a **PROJJSON** object (the JSON representation of coordinate reference definitions) If no CRS is provided, it defaults to **OGC:CRS84** (which is effectively WGS84 longitude-latitude). This ensures that consumers of the data know how to interpret the coordinates (e.g., latitude/longitude vs. projected coordinates).
+### 1.2 Core compliance requirements
 
--   **File-Level Metadata**: Each file's Parquet metadata includes a top-level `geo` key containing a JSON structure that describes the GeoParquet version and a *columns* object detailing each geometry column. Required fields at this level include `version` (GeoParquet spec version, e.g., \"1.1.0\"), `primary_column` (the name of the primary geometry field), and `columns` (the dictionary of geometry column metadata).
+All public and internal GeoParquet assets comply with the GeoParquet v1.1.0 specification:
 
--   **Geometry Column Metadata**: Under the `columns` entry, each geometry column is described by required fields and optional fields. **Required** per-column metadata includes the geometry `encoding` (e.g., \"WKB\"), the list of geometry types present (`geometry_types` such as Point, Polygon, etc.), the `crs` (coordinate reference system, or null if undefined), and a `bbox` (bounding box for all geometries). **Optional** fields can include `orientation` (to specify polygon winding order, if all polygons follow a given convention) and `edges` (to indicate if geometry edges are straight in a planar projection or follow great-circles on a sphere), as well as an `epoch` for dynamic CRS reference times, among others.
+- Geometry columns sit at the top level of the schema. Each file declares a single primary geometry column and may expose additional optional geometries when required (for example, the range-arc lines in the HF range diagnostics).
+- Geometries are encoded as Well-Known Binary (WKB) produced by PyArrow/GeoArrow writers. The encoding is explicitly declared in file metadata so that readers do not need to infer it.
+- Coordinate Reference Systems are embedded through PROJJSON definitions. Assets with explicit projections retain their CRS description; otherwise the CRS defaults to OGC:CRS84 (longitude, latitude).
+- Every file embeds a `geo` metadata block describing the GeoParquet version, the name of the primary geometry column, the per-column encoding, CRS, and bounding box, and any optional fields (polygon orientation, edge interpretation, epoch) required by that dataset.
+- The partition layouts exposed in the dataset inventory align with Hive-compatible folder keys so that Athena, DuckDB, and Spark can prune files without reading the Parquet footers.
 
-By adhering to GeoParquet's schema, the HF-EOLUS data files become self-describing for spatial content. Any library that understands GeoParquet (for example, GDAL, GeoPandas, Apache Sedona, etc.) can read these Parquet files and immediately know how to reconstruct geometries in the correct coordinate
-system. This interoperability is critical: it means the data can be used across different languages and platforms (Python, R, Java, SQL engines) without custom import code. The **primary geometry column** in our case is typically a point geometry representing either the location of a radar echo (latitude/longitude of the echo's coordinates) or a point on a model grid.
+### 1.3 Metadata pattern used in HF-EOLUS
 
-## Why GeoParquet?
+Each GeoParquet file shares the same metadata structure even though the payloads vary:
 
-GeoParquet was chosen to enable **efficient, scalable storage and analysis** of the project's geospatial data. It leverages Parquet's columnar layout, which offers several key advantages for large datasets:
+- `version` is set to `"1.1.0"` to pin the exact GeoParquet release implemented by the writers.
+- `primary_column` points to the geometry field leveraged for spatial filtering (e.g., `geometry` for point datasets or `range_geometry` for the range diagnostics). Downstream catalogs echo this value via the STAC Table extension.
+- `columns.<name>.encoding` is always `"WKB"`; `columns.<name>.geometry_types` lists the concrete geometry classes (`Point`, `MultiLineString`, etc.) present in the file; `columns.<name>.crs` either references OGC:CRS84 or holds a PROJJSON object describing the CRS supplied by the producer.
+- `columns.<name>.bbox` captures the file-level spatial extent to help clients that rely on metadata-driven spatial indexing.
+- Optional keys `orientation` and `edges` appear whenever polygons or great-circle segments are present (for instance, SAR-derived polygons keep `orientation: counterclockwise` and `edges: spherical` so directional statistics remain unambiguous).
 
--   **High Compression & Speed**: Parquet's columnar storage compresses data very effectively and allows reading only the needed columns. For example, if an analysis only needs timestamp and wind speed, Parquet can skip over other columns like geometry or bearing, leading to faster scan times. Columnar layout also aligns well with CPU caching and vectorized processing, yielding faster I/O for analytical queries.
+This shared metadata template means that any GeoParquet-compliant reader can infer the spatial semantics of the HF-EOLUS deliverables without looking up external documentation, yet the dataset-specific sections below still summarise how each workflow uses these rules.
 
--   **Interoperability**: As an open standard, Parquet (and by extension GeoParquet) is supported by many tools in the big-data ecosystem (Spark, Hive, Dask, DuckDB, etc.). This means our radar metrics can be queried with SQL engines (e.g., AWS Athena or DuckDB) directly from the Parquet files, or loaded into dataframes for processing in Python/R without conversion. The data format is self-contained; all necessary schema and CRS info travels with the file.
+## 2. Dataset families and GeoParquet profiles
 
--   **Scalability**: Parquet is designed for *big data*. Splitting data into many Parquet files (for example, one file per time interval, per station) allows parallel processing across a cluster. The combination of partitioned files and Parquet's internal indexing (row groups, statistics) means queries can be executed on subsets of data efficiently. This is ideal for HF-EOLUS, where one might run queries over *years* of measurements or join radar data with other large datasets.
+The following subsections align with the workflows enumerated in the dataset inventory. They act as the bridge between the generic GeoParquet rules above and the concrete artefacts produced by each processing line, summarising schemas, geometry definitions, partition layouts, and CRS metadata captured in `dataset_inventory.md`.
 
-Beyond these advantages, using GeoParquet aligns with emerging best practices for **cloud-native geospatial data**. Traditional formats like CSV or shapefiles are inefficient for large-scale use. By contrast, columnar formats like Parquet are *specifically designed for the cloud paradigm*, often yielding faster reads and smaller storage footprints than row-oriented formats.
+### 2.1 HF-Radar radial metrics ingestion
 
-### GeoParquet vs. NetCDF
+HF-radar radial metrics are rewritten from CODAR LLUV spectra into three GeoParquet families that always declare GeoParquet v1.1.0 metadata and WKB encodings:
 
-It is instructive to compare GeoParquet with **NetCDF**, as NetCDF has long been a cornerstone for scientific data storage (especially for meteorological and oceanographic grids). NetCDF (which typically uses an HDF5 under the hood) excels at packaging **multi-dimensional arrays** (e.g., variables on a 2D grid over time) along with rich metadata, following conventions like CF (Climate and Forecast) metadata for geospatial referencing. It has been the *de facto* standard for many environmental datasets and works well in HPC environments for numeric
-simulations.
+- `radial_metrics/pos_bragg={positive|negative}/timestamp=<ISO8601>/radial_metrics.parquet` holds every MUSIC echo with point geometries derived from `LOND/LATD`. The schema keeps the original LLUV columns (`Pwr`, `VELO`, `RNGE`, `BEAR`, quality flags) plus a derived `geometry` column exposed as the primary geometry.
+- `header/.../header.parquet` stores the key/value metadata rows for each acquisition window. Every row inherits the site location as a CRS84 point so header provenance can be filtered spatially.
+- `rng_info/.../rng_info.parquet` aggregates range-bin diagnostics (`SPRC`, `RNGC`, `NVAC`, `ALM1`–`ALM4`) and represents each arc as a `range_geometry` MultiLineString to capture the great-circle footprint of the ring being summarised.
 
-However, **NetCDF is not optimized for query-oriented analytics on massive collections of files**, especially in cloud or distributed environments. Key differences and trade-offs include:
+**Geometry and CRS.** All three families embed `columns.<name>.crs` entries pointing to OGC:CRS84. `radial_metrics` and `header` set `primary_column=geometry` and restrict `geometry_types` to `Point`. `rng_info` switches `primary_column` to `range_geometry`, declares `geometry_types=["MultiLineString"]`, and populates `columns.range_geometry.edges="spherical"` so readers know the arcs follow geodesics. Bounding boxes are recorded at the shard level to accelerate metadata-driven filtering.
 
--   **Data Model**: NetCDF's strength is in representing n-dimensional arrays (e.g., a variable with dimensions \[time, depth, lat, lon\]). This makes it very natural for gridded model output. Parquet, on the other hand, is inherently tabular (two-dimensional tables of rows and columns). This means that to store the same gridded data in Parquet, one might flatten it (each row = one grid cell with coordinates and value) or use nested structures. While Parquet *can* store these, it doesn't natively understand multi-dimensional chunking the way NetCDF does. For *point* data like HF radar echoes, the tabular model is perfectly suited -- each echo is a row, with columns for its attributes.
+**Partitioning and metadata.** Folder keys follow `pos_bragg=<0|1>/timestamp=<ISO8601 slot>` (with RFC 3339 timestamps URL-encoded) so Athena and DuckDB can prune shards without scanning Parquet footers. The `pos_bragg` column is stored as a tinyint flag inside every file to keep partition provenance within the schema. Each shard reiterates the GeoParquet version (`"1.1.0"`) and retains Glue statistics so scans remain predicate-pushdown friendly.
 
--   **Compression and Size**: NetCDF data can be compressed (NetCDF4 allows DEFLATE compression on variables), but Parquet's columnar compression often yields equal or better reduction for many data types, and it can compress across many rows of a single column very efficiently. In one example comparison, a time-series dataset stored in NetCDF was over 140 MB, while the same data in Parquet was around 8 MB -- an order of magnitude smaller [\[1\]](#ref2). Write and read speeds were also favorable for Parquet in that test. This is not universally true for all datasets, but it underscores that Parquet's binary encoding plus compression is very effective for large tables.
+**Schema highlights.** `timestamp` remains the temporal spine of all tables and is mirrored in STAC `datetime`. Echo tables expose the entire LLUV payload together with derived coordinates; header tables reduce to `metakey`, `metavalue`, `site_code`, `timestamp`, and `geometry`; `rng_info` concentrates on MUSIC-derived aggregates and includes the great-circle geometry. These consistent schemas allow downstream aggregations, QA dashboards, and STAC catalogs to reason about both positive and negative Bragg peaks without custom adapters.
 
--   **Random Access and Cloud Access**: NetCDF is designed for partial access *in theory* -- one can read a subset of a NetCDF file (a range of times or a region of the grid) if the software supports it. But in practice, especially on cloud storage, accessing a small portion of a NetCDF often requires downloading the entire file or large chunks of it. The format was created decades ago, before cloud object storage; it doesn't inherently support the HTTP range queries or the "windowed reads" needed for efficient cloud use. GeoParquet/Parquet, conversely, was built with modern data lake usage in mind -- it splits data into row groups and uses column indexes, so a query engine can skip through a Parquet file via byte offsets to retrieve only relevant pieces. This trait, along with the ability to store many small Parquet files in a directory, makes Parquet very **cloud-friendly**. Users can query thousands of Parquet files on S3 with tools like Spark or DuckDB without downloading them entirely, whereas NetCDF would force downloading each file for local access in many cases.
+### 2.2 Sentinel-1 SAR ingestion
 
--   **Metadata and Standards**: NetCDF relies on community conventions (like CF) to standardize meaning of metadata (e.g., units, coordinate variables), and it is highly mature in the climate/oceanography community. GeoParquet is newer and focuses on geospatial vector metadata (CRS, geometry). For HF-EOLUS, the *spatial* aspect (locations of observations) is critical, and GeoParquet explicitly handles that with CRS and geometry columns. NetCDF lacks a standardized way to embed a geometry with a coordinate reference system beyond listing coordinate axes; it treats latitude/longitude as data variables rather than as an intrinsic geometry object. By using GeoParquet, we directly attach the geometry and CRS in a standard way, which is more **interoperable** with GIS tools out-of-the-box.
+The Sentinel-1 workflow produces one GeoParquet shard per observation day under `assets/date=YYYY-MM-DD/YYYY-MM-DD.parquet`; lineage and schema metadata are surfaced through STAC (Processing/Table extensions) rather than through extra files inside the dataset bundle.
 
--   **Ecosystem and Usability**: Many modern data science tools (like Pandas, dask, Arrow, Spark) have first-class support for Parquet. They can scan and filter data in parallel, join tables, etc., treating the data like a database. NetCDF is usually accessed through specialized libraries (netCDF4, xarray) that are excellent for numerical analysis but not as seamless for large-scale query operations or SQL-style analysis. In HF-EOLUS, using Parquet means we can leverage SQL engines (DuckDB or Athena) to query the radar data *directly in place*, e.g., "find all echoes in a given spatial bounding box and time range" or "compute monthly statistics" without converting files or loading everything in memory. This capability was crucial for us to build efficient analysis pipelines.
+**Geometry and CRS.** Each shard declares `primary_column=geometry`, with `geometry_types=["Point"]`, `encoding="WKB"`, and `crs` pointing to CRS84. Optional polygon footprints, when exported, reuse the same metadata block but add `orientation="counterclockwise"` and `edges="spherical"` so swath analyses retain directional context. Longitude and latitude columns stay in the schema for compatibility with analytics engines that prefer scalar coordinates.
 
-In summary, **NetCDF remains a powerful format for certain use cases** (especially multi-dimensional gridded data in HPC contexts), but for the *volume and variety of data* in HF-EOLUS, **GeoParquet provides better performance and integration** with modern analytic tools. We found NetCDF increasingly inefficient when dealing with millions of individual point observations and long time series, whereas Parquet allowed us to scale out horizontally and use distributed computing. The adoption of GeoParquet was motivated by these efficiency gains and the desire to maintain a unified approach for both irregular point data and gridded data. As cloud-native formats like Parquet (and also Zarr for arrays) gain traction, they complement or even replace older formats by offering more accessible data **without sacrificing detail**.
+**Partitioning and metadata.** The `date` Hive partition is materialised both in the folder path and as a STRING column to accelerate Athena repairs. `firstMeasurementTime` and `lastMeasurementTime` are persisted verbatim as TIMESTAMP(UTC) columns and echoed into the STAC items’ temporal extent. The `geo` metadata advertises the bounding box of each day, and the ingestion pipeline writes the `processing:lineage` strings directly into the Items without producing intermediate JSON sidecars.
 
+**Schema highlights.** The core OWI measurements (`owiWindSpeed`, `owiWindDirection`, `owiMask`, `owiHeading`, `owiRadVel`, `owiWindQuality`, `owiInversionQuality`) remain DOUBLE/INT columns following the CTAS typing documented in the ingestion scripts. `rowid` is a deterministic BIGINT hash used as a foreign key by the aggregation toolkit. Every file keeps ESA quality bits untouched so downstream consumers can filter by reliability without revisiting the SAFE products.
 
-## Example Geo Metadata and Compliance
+### 2.3 Puertos del Estado buoy ingestion
 
-To illustrate how the GeoParquet standard is applied, below is an excerpt of the `geo` metadata JSON from one of our Parquet files (simplified for clarity). This metadata snippet shows all required fields mandated by GeoParquet v1.1.0, as well as optional fields we use for HF-Radar metrics:
+Puertos del Estado time series are flattened into one GeoParquet snapshot per buoy (e.g., `assets/VILANO.parquet`). There are no directory partitions: each file is a self-contained chronology that STAC references directly.
 
-```json
-{
-  "version": "1.1.0",
-  "primary_column": "geometry",
-  "columns": {
-    "geometry": {
-      "encoding": "WKB",
-      "geometry_types": [
-        "Point"
-      ],
-      "crs": {
-        "$schema": "https://proj.org/schemas/v0.5/projjson.schema.json",
-        "type": "GeographicCRS",
-        "name": "WGS 84 longitude-latitude",
-        "datum": {
-          "type": "GeodeticReferenceFrame",
-          "name": "World Geodetic System 1984",
-          "ellipsoid": {
-            "name": "WGS 84",
-            "semi_major_axis": 6378137,
-            "inverse_flattening": 298.257223563
-          }
-        },
-        "coordinate_system": {
-          "subtype": "ellipsoidal",
-          "axis": [
-            {
-              "name": "Geodetic longitude",
-              "abbreviation": "Lon",
-              "direction": "east",
-              "unit": "degree"
-            },
-            {
-              "name": "Geodetic latitude",
-              "abbreviation": "Lat",
-              "direction": "north",
-              "unit": "degree"
-            }
-          ]
-        },
-        "id": {
-          "authority": "OGC",
-          "code": "CRS84"
-        }
-      },
-      "bbox": [
-       <minX>, <minY>, <maxX>, <maxY>
-      ],
-      "orientation": "counterclockwise",
-      "edges": "spherical"
-    }
-  }
-}
-```
+**Geometry and CRS.** Every record carries a `geometry` column with the fixed buoy location encoded as a CRS84 point. The `geo` metadata therefore lists a single bounding box per file, `geometry_types=["Point"]`, and `primary_column=geometry`. Because the buoy coordinates never change, these values double as spatial provenance for the entire history.
 
-In this example:
+**Schema highlights.** The schema keeps `timestamp` (TIMESTAMP UTC), `wind_speed` (DOUBLE), `wind_dir` (INT), maintenance quality flags when available, and derived aggregates used by ANN validation. Nullability mirrors the original PdE CSV conventions so missing/calm samples propagate cleanly. Athena CTAS SQL captured alongside the delivery guarantees that downstream re-ingestion can recreate the same typing.
 
--   **Required top-level fields**: The `version` is **1.1.0** indicating compliance with that GeoParquet spec version. The `primary_column` is `"geometry"`, meaning this is the main geometry field for spatial operations. The `columns` object then contains an entry for `"geometry"`.
+**Metadata considerations.** Rewriting everything into single files allows the `geo` block to remain stable across releases, while `table:row_count` and `table:columns` in the STAC Table extension expose the schema to catalog clients. Citation metadata lives in STAC, so the GeoParquet files focus on CRS declarations and bounding boxes only.
 
--   **Required geometry column metadata** (for the `"geometry"` column): We specify the `encoding` as **WKB** (well-known binary for geometry storage), the `geometry_types` as `["Point"]` since each record is a point location, and a detailed `crs` object in PROJJSON format describing WGS84 (longitude-latitude axes). The `bbox` provides the file's spatial extent in \[minX, minY, maxX, maxY\] (here, effectively min lon, min lat, max lon, max lat).
+### 2.4 HF-EOLUS geospatial aggregation toolkit
 
--   **Optional GeoParquet fields used**: We include `orientation: "counterclockwise"`, indicating that if there were any polygon geometries, their outer rings follow a counterclockwise vertex order (an OGC convention). For point data this may not apply, but it's included for completeness and future compatibility. We also set `edges: "spherical"`, declaring that edges between coordinates should be interpreted along the surface of the ellipsoid (great-circle arcs) rather than straight lines on a projected plane. These optional fields come from the GeoParquet spec extensions and ensure that if we ever include non-point geometries (e.g., coverage polygons), their orientation and edge interpolation are standardized.
+The aggregation toolkit emits several GeoParquet assets keyed by station and grid node:
 
-Every Parquet file in HF-EOLUS containing geospatial data has a similar metadata block, ensuring it **fully conforms to GeoParquet v1.1.0**. This means any tool can verify the file by checking that all required fields are present and correctly formatted per the official schema. It also future-proofs the data: as GeoParquet evolves, versioning in the metadata (`"version": "1.1.0"`) lets readers know exactly which ruleset was used, and they can adapt accordingly.
+- `vila_aggregated/pos_bragg={0|1}/0.parquet` and `prio_aggregated/...` contain half-hour summaries of HF echoes projected onto analysis nodes.
+- `sar_aggregated/data.parquet` stores Sentinel-1-derived aggregates on the same mesh.
+- `grid_nodes_*.parquet` alongside `geo_join_output*.parquet` capture the node definitions and the lookup between raw echoes and grid nodes.
 
-By following the GeoParquet specification, HF-EOLUS achieves a blend of *efficiency* and *self-descriptiveness*: the data is stored compactly and can be queried at scale, and yet each file carries the information needed to interpret its spatial content without external documentation.
+**Geometry and CRS.** Aggregated tables always expose the node centroid as `geometry` (WKB Point, CRS84) and mark it as the primary geometry. Range diagnostics that rely on arcs reuse the same approach as the ingestion workflow by embedding `edges="spherical"`. Grid definition tables add auxiliary planar coordinates when required but keep `geometry` as the canonical spatial column.
+
+**Partitioning and metadata.** HF aggregates stay partitioned by `pos_bragg={0|1}` so consumers can load positive and negative peaks independently. Each shard records the `node_id` domain, timestamp range, and bounding box inside the `geo` metadata so ANN pipelines can preflight extents without scanning the rows. SAR aggregates are single files with the same metadata layout, while node definition tables omit temporal fields because they are static assets.
+
+**Schema highlights.** Common keys across all tables are `timestamp`, `node_id`, `pos_bragg` (when applicable), and `geometry`. HF-specific columns include the `n`, `pwr_*`, and `velo_*` statistic families plus distance/bearing descriptors required downstream. SAR aggregates contribute `owiwindspeed_*`, `owiwinddirection_*`, and sample-count columns. The join artifacts keep `echo_id`, `node_id`, and quality flags so analysts can trace every aggregate back to its raw echoes.
+
+### 2.5 HF-Radar wind inversion toolkit
+
+The wind inversion toolkit republishes the aggregated datasets as ANN-ready GeoParquet tables and captures every inference corpus inside the same standard metadata frame.
+
+**Data families.** `catalogs/data_preparation_pipeline/` stores the pivoted HF/SAR/buoy datasets; `catalogs/*_pipeline/assets/data.parquet` bundles the trained-model inputs per experiment (baseline, KD, SAR-only, grid-offset); `catalogs/*_inference/assets/data.parquet` keeps the prediction outputs for each fold or station.
+
+**Geometry and CRS.** Each file retains the grid `geometry` column from the aggregation toolkit, declared as a CRS84 point and marked as the primary geometry. Additional geometry columns (e.g., buffered footprints) are rare; when present they inherit the same CRS declaration. Bounding boxes reflect the union of all nodes covered by the file so inference consumers can preflight spatial coverage.
+
+**Schema highlights.** Columns fall into four groups: (1) deterministic identifiers (`timestamp`, `node_id`, `fold_id`, `partition_label`), (2) aggregated HF/SAR features (`vila_aggregated__*`, `prio_aggregated__*`, SAR statistical families), (3) reference data (`pde_vilano_*`, maintenance intervals, site bearings), and (4) model outputs (`pred_wind_speed`, `pred_cos_wind_dir`, `prob_range_*`, confidence gates). Every table keeps explicit dtypes (DOUBLE for continuous metrics, INT/BIGINT for counters) and relies on the GeoParquet metadata to preserve CRS context for the node geometry.
+
+**Metadata considerations.** Because the ANN corpora are stored as single shards per experiment, the `geo` block’s `bbox` and `row_count` give consumers enough information to detect station-specific subsets without reading all data. The absence of directory partitions keeps fold assignment inside the schema, simplifying reproducibility.
+
+### 2.6 Wind resource toolkit
+
+The resource toolkit exposes two public GeoParquet snapshots: the ANN inference corpus replicated from the wind-inversion repository and the derived power estimates.
+
+**Geometry and CRS.** Both tables preserve the CRS84 point geometry per node and declare it as `primary_column=geometry`. The inference snapshot mirrors the metadata emitted by the ANN pipeline, while `power_estimates_nodes.parquet` recomputes the bounding box after summarising nodes so spatial tools can trim the dataset quickly.
+
+**Schema highlights.** The inference file repeats every predictor from the ANN stage plus the prediction columns and QA flags (`pred_*`, `prob_range_*`, `range_flag`, `range_flag_confident`). The power estimates table introduces summarised metrics such as `method`, `power_density_w_m2`, `turbine_mean_power_kw`, `capacity_factor`, Kaplan–Meier (`km_shape`, `km_scale`) and Weibull (`weibull_k`, `weibull_lambda`) parameters, bootstrap spreads, empirical QA ratios, and Boolean quality gates. Companion `manifest.json` assets track checksums and `hf_eolus:code_commit` identifiers, but the GeoParquet file itself remains self-describing thanks to the `geo` block.
+
+**Partitioning and metadata.** Public deliveries are single files on purpose so each version tag (e.g., `hf_eolus:version=sar-range-final-20251018`) maps to an immutable asset. Since the datasets can exceed one million rows, `row_group_size` is tuned to keep DuckDB and Athena efficient while still enabling columnar pruning. Bounding boxes and row counts are always set, ensuring catalog clients can estimate footprint and cost before reading the binaries.
+
+### 2.7 MeteoGalicia wind interpolation (standalone branch)
+
+The MeteoGalicia interpolation workflow remains an independent branch that mirrors HF-EOLUS conventions while keeping its catalog separate from the ANN and wind-resource lines.
+
+**Partitioning and assets.** Hourly GeoParquet shards live under `year=/month=/day=/hour=/data.parquet`, each accompanied by JSON sidecars (`metadata.json`) and diagnostic PNGs. Additional collections ship the PdE buoy references used for validation, but none of these assets are linked via `derived_from` to the ANN or resource catalogs yet.
+
+**Geometry and CRS.** Every shard stores node centroids in a `geometry` column tagged as CRS84 plus auxiliary planar coordinates (`x_local`, `y_local`) to encode the MeteoGalicia grid reference frame. The GeoParquet metadata lists `geometry_types=["Point"]`, and when great-circle segments are stored (e.g., interpolation footprints) they inherit the `edges="spherical"` flag.
+
+**Schema highlights.** Mandatory columns include `timestamp`, `node_id`, `x_local`, `y_local`, `is_orig`, `source_model`, `interpolation_source`, the interpolated components (`u`, `v`, `wind_speed`, `wind_direction`, `u_rkt`, `v_rkt`), and diagnostics such as `kriging_var_u/v`, `nearest_distance_km`, `neighbors_used`, and the cross-validation/test statistics. These values are echoed in the per-hour metadata JSON but the GeoParquet schema remains the authoritative source.
+
+**Independence notice.** Although the files comply with GeoParquet v1.1.0 and the Table extension like the rest of the project, their STAC catalog is intentionally standalone. Consumers must treat its versioning and DOI lineage independently until the interpolation outputs are formally wired into the ANN or wind-resource workflows.
 
 ## References
 
-<ol>
-<li id="ref1">GeoParquet v1.1.0. https://geoparquet.org/releases/v1.1.0</li>
-<li id="ref2">Efficient Storage and Querying of Geospatial Data with Parquet and DuckDB https://waterprogramming.wordpress.com/2022/03/07/efficient-storage-and-querying-of-geospatial-data-with-parquet-and-duckdb</li>
-</ol>
+1. GeoParquet v1.1.0. https://geoparquet.org/releases/v1.1.0  
+2. Efficient Storage and Querying of Geospatial Data with Parquet and DuckDB. https://waterprogramming.wordpress.com/2022/03/07/efficient-storage-and-querying-of-geospatial-data-with-parquet-and-duckdb
