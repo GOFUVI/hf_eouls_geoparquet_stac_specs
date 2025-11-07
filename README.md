@@ -44,6 +44,8 @@ The wind-resource line operates on the ANN inference corpus to compute per-node 
 Workflow DOI: pending publication · Dataset DOI: pending publication  
 This branch synchronizes MeteoGalicia model outputs, performs kriging/nearest-neighbor interpolation on dense grids, and exposes the hourly GeoParquet shards together with metadata JSON files and diagnostic plots in its own STAC catalog tree. It intentionally remains a standalone branch that does not feed the HF-Radar wind-resource chain yet; nevertheless, it adheres to the same GeoParquet/STAC conventions so it can be integrated once the MeteoGalicia deliverables receive their DOIs and downstream consumers are ready to ingest the interpolated winds.
 
+Cross-document validation of these seven workflows is summarised in the [Cross-Document Validation Checklist](docs/cross_document_validation_checklist.md), which lists the exact sections across README, overview, GeoParquet specs, and STAC specs that describe each processing line.
+
 ## GeoParquet Specification
 The [GeoParquet specification](geoparquet_specs.md) details how geometry columns, coordinate reference systems, and file-level metadata are encoded. It follows GeoParquet v1.1.0, including optional fields like polygon orientation and edge type to ensure interoperability across tools.
 

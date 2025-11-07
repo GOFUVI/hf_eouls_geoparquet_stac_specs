@@ -33,3 +33,9 @@ Revisé con el usuario la aclaración sobre el flujo Geo Tools y actualicé `REA
 
 # 2025-11-06T17:24:24Z
 `TODO.md:13` – Finalicé la documentación del capítulo de perfiles STAC contrastando cada catálogo real (radial metrics, SAR, boyas, geo tools, wind inversion, wind resource e interpolación) con sus carpetas: corregí la descripción de assets (p.ej. sentinel-1 sin sidecars, boyas solo con el Parquet), los enlaces reales (`describedby`, ausencia de `derived_from` en geo tools/inversion) y la separación de catálogos hermanos en MeteoGalicia. Dejó alineados `stac_specs.md`, `dataset_inventory.md` y `geoparquet_specs.md` con la estructura verificada.
+
+# 2025-11-06T17:45:48Z
+`TODO.md:16` – Redacté `docs/cross_document_validation_checklist.md` con la tabla exigida en documentation_update_plan.md §4, enlazando por flujo las secciones concretas de README/overview, `geoparquet_specs.md` y `stac_specs.md`, y resaltando que la rama de MeteoGalicia sigue siendo independiente. Añadí un párrafo en `README.md` (tras la subsección de MeteoGalicia) que remite al checklist para que los lectores lo encuentren en el flujo principal y marqué la tarea como `pending_review` en `TODO.md`.
+
+# 2025-11-07T05:55:09Z
+`TODO.md:16` – Validé el checklist recién creado y confirmé que README, overview y las especificaciones ya reflejan el mismo contenido, por lo que no fueron necesarios cambios adicionales. Marqué la tarea como completada en `TODO.md`, cerrando el bloque de documentación pendiente del plan.
