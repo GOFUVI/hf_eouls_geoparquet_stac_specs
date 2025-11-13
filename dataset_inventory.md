@@ -3,7 +3,7 @@
 This inventory centralizes the traceability requirements defined in the internal documentation update plan. The table below enumerates each external HF-EOLUS workflow, pre-populating the common fields requested for the first documentation milestone (workflow name, DOI references, STAC catalog root, and current partition layout). Additional columns for GeoParquet deliverables, critical columns, and STAC extensions are included as placeholders so subsequent tasks can enrich them without having to reformat the document.
 
 - **hf_radial_metrics_aws_ingestion**
-  - DOI references: workflow 10.5281/zenodo.17096796; dataset/STAC 10.5281/zenodo.16892223.
+  - DOI references: workflow 10.5281/zenodo.17071947; dataset/STAC 10.5281/zenodo.16892222.
   - STAC catalog root: `hf_radial_metrics_aws_ingestion/hf_ingestion/catalog.json` (station sub-catalogs under `VILA/` and `PRIO/`, delivered as compressed archives on Zenodo).
   - Partition scheme: `pos_bragg={positive|negative}/timestamp=<ISO8601 slot>` (timestamps percent-encode `:`) so each Parquet shard retains the Bragg peak polarity and the original LLUV acquisition time.
   - GeoParquet deliverables:
@@ -17,7 +17,7 @@ This inventory centralizes the traceability requirements defined in the internal
   - STAC extensions: Collections and Items declare the **Table Extension v1.2.0** to publish `table:columns`, `table:primary_geometry`, and `table:row_count`; they also expose custom `hf_site:*` and `radial_metrics:*` properties plus `sci:doi`/`sci:citation` fields for citation traceability, mirroring the JSON bundled under `hf_ingestion/`.
 
 - **hf_eolus_sar_ingestion**
-  - DOI references: workflow 10.5281/zenodo.17096926; dataset/STAC 10.5281/zenodo.17100125.
+  - DOI references: workflow 10.5281/zenodo.17011788; dataset/STAC 10.5281/zenodo.17007304.
   - STAC catalog root: `hf_eolus_sar_ingestion/hf_eolus_sar/collection.json` (daily Items under `items/`, delivered as a compressed archive on Zenodo).
   - Partition scheme: `assets/date=YYYY-MM-DD/part-*.parquet`, aligned with the Athena partition column loaded via `MSCK REPAIR`.
   - GeoParquet deliverables:
@@ -33,7 +33,7 @@ This inventory centralizes the traceability requirements defined in the internal
     - Items enable both the **Table Extension v1.2.0** and the **Processing Extension v1.1.0**; the latter carries `processing:lineage` strings embedded directly in each STAC Item (enumerating the Sentinel-1 SAFE archives for that day), while the former lists the OWI schema so STAC clients can introspect Parquet columns without reading the files.
 
 - **hf_eolus_pde_buoy_ingestion**
-  - DOI references: workflow 10.5281/zenodo.17097949; dataset/STAC 10.5281/zenodo.17098038.
+  - DOI references: workflow 10.5281/zenodo.17097948; dataset/STAC 10.5281/zenodo.17098037.
   - STAC catalog root: `hf_eolus_pde_buoy_ingestion/.stac/buoy_ingestion/collection.json` (published as a compressed archive on Zenodo).
   - Partition scheme: one GeoParquet snapshot per buoy, no directory partitions; the buoy identifier maps directly to the asset filename.
   - GeoParquet deliverables:
@@ -47,7 +47,7 @@ This inventory centralizes the traceability requirements defined in the internal
     - Scientific citation metadata (`sci:doi`, `sci:citation`, `providers`) is injected into both collection and items via the provided properties JSON, so clients consuming the **Scientific Extension** fields can trace the PdE source without inspecting the README.
 
 - **hf_eolus_geo_tools**
-  - DOI references: workflow 10.5281/zenodo.17104924; dataset/STAC 10.5281/zenodo.17115413.
+  - DOI references: workflow 10.5281/zenodo.17104923; dataset/STAC 10.5281/zenodo.17105305.
   - STAC catalog roots: `hf_eolus_geo_tools/vila_catalog/catalog.json`, `hf_eolus_geo_tools/prio_catalog/catalog.json`, and `hf_eolus_geo_tools/sar_catalog/catalog.json` (each released as compressed archives on Zenodo).
   - Partition scheme: `pos_bragg={0|1}/1.parquet` for the HF-radar aggregates per station; SAR-driven aggregates are consolidated into single files under `assets/data.parquet`, inheriting any optional partition columns defined at finalization.
   - GeoParquet deliverables:
@@ -61,7 +61,7 @@ This inventory centralizes the traceability requirements defined in the internal
   - STAC extensions: All Collections/Items depend on the **Table Extension v1.2.0** to advertise schema metadata, and reuse the `sci:*` citation block plus license/provider metadata defined in `stac_properties_collection_{hf,sar}.json`; HF catalogs additionally keep the custom `hf_site:*` namespace for station context.
 
 - **hf-wind-inversion**
-  - DOI references: workflow 10.5281/zenodo.17464519; dataset/STAC 10.5281/zenodo.17464583.
+  - DOI references: workflow 10.5281/zenodo.17369263; dataset/STAC 10.5281/zenodo.17131227.
   - STAC catalog root: `hf-wind-inversion/catalogs/catalog.json` with sub-catalogs such as `vilano_pipeline/` and `grid_offset_pipeline/` (distributed as compressed bundles on Zenodo).
   - Partition scheme: consolidated GeoParquet assets stored as flat files (`assets/data.parquet`) keyed by `(timestamp, node_id, partition_label)`; cross-validation or domain splits are encoded in columns rather than folder paths.
   - GeoParquet deliverables:
@@ -76,7 +76,7 @@ This inventory centralizes the traceability requirements defined in the internal
   - STAC extensions: All collections declare the STAC **Table Extension v1.2.0** (with `table:tables`, exhaustive `table:columns`, and `table:row_count`), reuse `sci:doi` / `sci:citation` blocks from the DOIs above, and expose detailed `providers` metadata (INTECMAR, ESA, PdE, GOFUV). Inference catalogs share identical schemas so Items can be compared across scenarios, and every Item keeps the GeoParquet asset co-located with the JSON to ease downstream syncing.
 
 - **wind_interpolation**
-  - DOI references: pending publication (see `AGENTS.md`).
+  - DOI references: workflow 10.5281/zenodo.17598353; dataset/STAC 10.5281/zenodo.17490872.
   - STAC catalog root: `wind_interpolation/catalogs/catalog.json` (independent branch, e.g., `meteogalicia_interpolation/`, delivered as a compressed archive).
   - Partition scheme: `year=/month=/day=/hour=/` partitions under each S3/local prefix, accompanied by metadata sidecars that track the MeteoGalicia `source_model`; remains independent from the wind-resource workflow.
   - GeoParquet deliverables:
@@ -90,7 +90,7 @@ This inventory centralizes the traceability requirements defined in the internal
   - STAC extensions: Collections and Items rely on the STAC **Table Extension v1.2.0** (per-hour `table:columns`, row counts, and `table:primary_geometry`). Items also expose `properties.source_model` and the collection aggregates the distinct values under `extra_fields.source_models`, mirroring the provenance recorded in every GeoParquet partition. Each Item links to its metadata and plot assets via `describedby` / `related` relationships, while the buoy catalog inherits the `sci:doi` / `sci:citation` references from the PdE ingestion repository. This entire catalog tree is explicitly documented as a self-contained branch that does not yet feed the wind-resource chain.
 
 - **wind_resource**
-  - DOI references: pending publication (see `AGENTS.md`).
+  - DOI references: workflow 10.5281/zenodo.17591545; dataset/STAC 10.5281/zenodo.17594220.
   - STAC catalog root: `wind_resource/catalogs/sar_range_final_power_estimates/catalog.json` (plus dependent inputs enumerated in `config/stac_catalogs.json`, released as compressed archives on Zenodo).
   - Partition scheme: public GeoParquet deliverables are single-file snapshots (`assets/power_estimates_nodes.parquet`) keyed by node identifiers and timestamps; no directory partitions because the dataset is node-dense yet time-aggregated.
   - GeoParquet deliverables:
